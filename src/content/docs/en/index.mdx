@@ -1,0 +1,49 @@
+---
+title: Sousou School
+description: DevOps Training — From Zero to Interview-Ready
+template: splash
+hero:
+  title: |
+    <span class="text-accent">DevOps</span> Training
+  tagline: From zero to interview-ready. No fluff, simple analogies, copy-paste commands, and a hands-on project from start to finish.
+  actions:
+    - text: Start the course
+      link: /en/modules/00-prerequisites/
+      icon: right-arrow
+      variant: primary
+    - text: View cheatsheet
+      link: /en/references/cheatsheet/
+      icon: open-book
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Where to start?
+
+<CardGrid>
+  <Card title="10 Modules" icon="open-book">
+    From Linux to Kubernetes, a progressive hands-on journey.
+    [Get started →](/en/modules/00-prerequisites/)
+  </Card>
+  <Card title="Hands-on Project" icon="rocket">
+    A React + FastAPI app that evolves with each module.
+    [View project →](/en/projet/)
+  </Card>
+  <Card title="Interview Prep" icon="approve-check-circle">
+    Technical questions, scenarios, system design exercises.
+    [Practice →](/en/entretien/interview-questions/)
+  </Card>
+  <Card title="Cheatsheet" icon="document">
+    All essential commands in a single file.
+    [Browse →](/en/references/cheatsheet/)
+  </Card>
+</CardGrid>
+
+<style>
+{`
+  .text-accent {
+    color: var(--sl-color-accent);
+  }
+`}
+</style>

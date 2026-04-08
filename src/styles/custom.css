@@ -1,0 +1,57 @@
+/* === Sousou School Design System === */
+/* Flat Design / Knowledge Base palette */
+/* Typography: Plus Jakarta Sans + JetBrains Mono */
+
+:root {
+	/* Accent color scale (blue) */
+	--sl-color-accent-low: #dbeafe;
+	--sl-color-accent: #2563eb;
+	--sl-color-accent-high: #1e40af;
+
+	/* Gray/slate scale (light mode) */
+	--sl-color-gray-1: #f1f5f9;
+	--sl-color-gray-2: #e2e8f0;
+	--sl-color-gray-3: #cbd5e1;
+	--sl-color-gray-4: #94a3b8;
+	--sl-color-gray-5: #475569;
+	--sl-color-gray-6: #1e293b;
+	--sl-color-gray-7: #0f172a;
+
+	/* Typography */
+	--sl-font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+	--sl-font-system-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+}
+
+/* Dark mode */
+:root[data-theme='dark'] {
+	--sl-color-accent-low: #1e3a5f;
+	--sl-color-accent: #3b82f6;
+	--sl-color-accent-high: #93c5fd;
+
+	--sl-color-gray-1: #1e293b;
+	--sl-color-gray-2: #334155;
+	--sl-color-gray-3: #475569;
+	--sl-color-gray-4: #94a3b8;
+	--sl-color-gray-5: #cbd5e1;
+	--sl-color-gray-6: #e2e8f0;
+	--sl-color-gray-7: #f8fafc;
+}
+
+/* Flat design: clean headings */
+.sl-markdown-content h2 {
+	border-bottom: 1px solid var(--sl-color-gray-2);
+	padding-bottom: 0.5rem;
+}
+
+/* Better code block styling */
+.sl-markdown-content pre {
+	border: 1px solid var(--sl-color-gray-2);
+	border-radius: 0.5rem;
+}
+
+/* Smoother transitions */
+a,
+button,
+.starlight-aside {
+	transition: all 150ms ease;
+}

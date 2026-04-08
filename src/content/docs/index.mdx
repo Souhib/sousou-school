@@ -1,0 +1,73 @@
+---
+title: Sousou School
+description: Formation DevOps — De zéro à prêt pour l'entretien
+template: splash
+hero:
+  title: |
+    Formation <span class="text-accent">DevOps</span>
+  tagline: De zéro à prêt pour l'entretien. Pas de blabla, des analogies simples, des commandes copy-paste, et un projet fil rouge du début à la fin.
+  actions:
+    - text: Commencer la formation
+      link: /modules/00-prerequisites/
+      icon: right-arrow
+      variant: primary
+    - text: Voir le cheatsheet
+      link: /references/cheatsheet/
+      icon: open-book
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Par où commencer ?
+
+<CardGrid>
+  <Card title="10 Modules" icon="open-book">
+    De Linux à Kubernetes, un parcours progressif et pratique.
+    [Commencer →](/modules/00-prerequisites/)
+  </Card>
+  <Card title="Projet fil rouge" icon="rocket">
+    Une app React + FastAPI que tu fais évoluer à chaque module.
+    [Voir le projet →](/projet/)
+  </Card>
+  <Card title="Préparation entretien" icon="approve-check-circle">
+    Questions techniques, mises en situation, system design.
+    [S'entraîner →](/entretien/interview-questions/)
+  </Card>
+  <Card title="Cheatsheet" icon="document">
+    Toutes les commandes essentielles en un seul fichier.
+    [Consulter →](/references/cheatsheet/)
+  </Card>
+</CardGrid>
+
+## Parcours d'apprentissage
+
+```
+Module 0 (Git + WSL) ─▶ Module 1 (Linux) ─▶ Module 2 (Réseau) ─▶ Module 3 (Docker)
+                                                                        │
+                                             ┌──────────────┬───────────┼──────────────┐
+                                             ▼              ▼           ▼              ▼
+                                       Module 4        Module 8       Module 9    (tous les
+                                       (CI/CD)         (Monitoring)   (K8s)       modules
+                                             │         optionnel   sensibilisation  suivants)
+                                             ▼
+                                       Module 5
+                                       (AWS)
+                                             │
+                                             ▼
+                                       Module 6
+                                       (Terraform)
+                                             │
+                                             ▼
+                                       Module 7
+                                       (Ansible)
+                                       optionnel
+```
+
+<style>
+{`
+  .text-accent {
+    color: var(--sl-color-accent);
+  }
+`}
+</style>

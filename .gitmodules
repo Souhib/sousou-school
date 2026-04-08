@@ -1,0 +1,3 @@
+[submodule "content-source"]
+	path = content-source
+	url = git@github.com:Souhib/devops-from-zero.git
