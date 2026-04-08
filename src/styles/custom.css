@@ -51,6 +51,11 @@
 	border-radius: 0.5rem;
 }
 
+/* Fix ligature issues (e.g. "fi" in "fil" getting merged/clipped) */
+body {
+	font-variant-ligatures: none;
+}
+
 /* Smoother transitions */
 a,
 button,
