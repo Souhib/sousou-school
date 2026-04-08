@@ -8,14 +8,15 @@
 	--sl-color-accent: #2563eb;
 	--sl-color-accent-high: #1e40af;
 
-	/* Gray/slate scale (light mode) */
-	--sl-color-gray-1: #f1f5f9;
-	--sl-color-gray-2: #e2e8f0;
-	--sl-color-gray-3: #cbd5e1;
+	/* Gray/slate scale (light mode)
+	   Starlight convention: 1=darkest (text), 7=lightest (background) */
+	--sl-color-gray-1: #0f172a;
+	--sl-color-gray-2: #1e293b;
+	--sl-color-gray-3: #475569;
 	--sl-color-gray-4: #94a3b8;
-	--sl-color-gray-5: #475569;
-	--sl-color-gray-6: #1e293b;
-	--sl-color-gray-7: #0f172a;
+	--sl-color-gray-5: #cbd5e1;
+	--sl-color-gray-6: #e2e8f0;
+	--sl-color-gray-7: #f1f5f9;
 
 	/* Typography */
 	--sl-font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -28,13 +29,13 @@
 	--sl-color-accent: #3b82f6;
 	--sl-color-accent-high: #93c5fd;
 
-	--sl-color-gray-1: #1e293b;
-	--sl-color-gray-2: #334155;
-	--sl-color-gray-3: #475569;
+	--sl-color-gray-1: #f8fafc;
+	--sl-color-gray-2: #e2e8f0;
+	--sl-color-gray-3: #cbd5e1;
 	--sl-color-gray-4: #94a3b8;
-	--sl-color-gray-5: #cbd5e1;
-	--sl-color-gray-6: #e2e8f0;
-	--sl-color-gray-7: #f8fafc;
+	--sl-color-gray-5: #475569;
+	--sl-color-gray-6: #334155;
+	--sl-color-gray-7: #1e293b;
 }
 
 /* Flat design: clean headings */
