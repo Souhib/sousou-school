@@ -10,6 +10,10 @@ src/content/docs/modules/
 src/content/docs/entretien/
 src/content/docs/references/
 src/content/docs/projet/
+src/content/docs/en/modules/
+src/content/docs/en/entretien/
+src/content/docs/en/references/
+src/content/docs/en/projet/
 public/images/
 
 # environment
