@@ -47,7 +47,7 @@ wsl --list --verbose
 
 ## Installing Python, uv and Bun (project tools)
 
-> **You don't need to learn Python or Bun for this course.** We install them because the Hands-on Project needs them (backend in Python, frontend in JavaScript). You'll just copy-paste commands to install and run the app. The goal of this course is DevOps, not development.
+> **You don't need to learn Python or Bun for this course.** We install them because the Hands-on Project needs them: **Python** (a programming language) for the backend, **Bun** (a tool to run JavaScript) for the frontend, and **uv** (a tool to manage Python dependencies). You'll just copy-paste commands to install and run the app. The goal of this course is DevOps, not development. Each tool is explained in detail right below.
 
 Before we begin, here are some terms you'll see everywhere:
 
@@ -56,8 +56,10 @@ Before we begin, here are some terms you'll see everywhere:
 | **Application (app)** | A program that does something. Our app = a task list. |
 | **Dependency (= package)** | A piece of code written by someone else that your app uses. Instead of coding everything yourself, you reuse existing work. Like ready-made ingredients instead of making everything from scratch. We also call it a **package** because it's code packaged up and ready to install. FastAPI is a package. Pytest is a package. |
 | **Package manager** | A tool that downloads, installs, and updates packages (dependencies) automatically. You tell it "I need FastAPI" and it goes and fetches it from the Internet, installs it, and handles updates. Each language has its own: **pip/uv** for Python, **npm/bun** for JavaScript, **apt** for Linux. |
+| **URL** | A web address. When you type `instagram.com/explore` in your browser's address bar, that's a URL. It's the exact address of a page or resource on the Internet — like a postal address, but for a website. `localhost:8000/api/tasks` is also a URL, except it points to your own machine. |
+| **JSON** | A text format for structuring data. It looks like this: `{"name": "Jean", "age": 25}`. It's the standard format programs use to exchange information. When your browser asks a server for data, the response is often in JSON. |
+| **API** | The set of "entry doors" of a program. Imagine: when you open Instagram, the app on your phone sends a request to Instagram's server (like "give me the 20 latest posts in my feed"). The server receives the request, fetches the data, and sends back a response. The **API** is this system of entry doors: a list of addresses (URLs) you can call, and for each address, the server knows what to do and what to respond. Our backend exposes an API with addresses like `/api/tasks` (to get tasks) or `/api/tasks` via POST (to create one). |
 | **Framework** | A set of ready-to-use tools for building a specific type of application. FastAPI is a framework for creating APIs in Python. React is a framework for creating web interfaces. |
-| **API** | Application Programming Interface — a way for two programs to talk to each other. Concretely, it's a set of URLs (like `/api/tasks`) that you can send requests to and receive responses from (in JSON). |
 | **Endpoint** | A specific URL in an API that performs an action. `GET /api/tasks` is an endpoint that returns the list of tasks. |
 
 ### Python — The backend
