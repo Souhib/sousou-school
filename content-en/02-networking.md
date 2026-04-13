@@ -321,6 +321,18 @@ sudo ufw status
 
 ## Interview Corner
 
+> The first question is a classic interview staple. It tests whether you can connect all the concepts from this module (DNS, IP, HTTP, request/response) into a concrete scenario.
+
+**Q: What happens when you type a URL in your browser?**
+A: Let's take the example of `instagram.com`:
+1. **DNS resolution** — Your browser doesn't know `instagram.com`. It asks a **DNS** (the Internet's phone book) to give it the server's IP address (e.g., `157.240.1.174`). It's like looking up a phone number from a name in a directory.
+2. **Sending the request** — Your browser sends an HTTP request to the server at that IP address: "send me the homepage".
+3. **Server-side processing** — Instagram's server receives the request, fetches the necessary data (your posts, your stories...) and prepares the response.
+4. **Server response** — The server sends back an HTTP response containing the page content (HTML for structure, CSS for styling, JavaScript for interactions) and data (in JSON).
+5. **Rendering** — Your browser receives all of this, assembles the HTML/CSS/JavaScript, and displays the page on screen.
+
+In short: your browser → DNS → server → response → display. The entire round trip typically takes a few hundred milliseconds.
+
 **Q: What is an IP address?**
 A: A unique identifier for a machine on a network. Two types: public (visible on the Internet) and private (visible only locally).
 
