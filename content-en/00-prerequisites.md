@@ -10,7 +10,7 @@ Before doing DevOps, you need two things: a **Linux environment** (because 90% o
 
 **What is a server?** A server is just a computer that runs 24/7 and responds to requests from other computers. When you type `google.com`, your browser sends a request to a Google server, which responds with the web page. Your application's server is the computer where your app runs and waits for user requests.
 
-**Git** is like a **video game save system**. Each commit = a save point. You can go back in time, create branches (parallel universes), and merge everything together. Without Git, it's `project_final_v2_FINAL_really_final.zip`.
+**Git** is like a **video game save system**. You can create save points (called **commits**), go back in time if you made a mistake, and even work on multiple versions in parallel (called **branches**) before merging everything together. Without Git, to keep a history of your work, you'd have to copy your folder after every change and rename it by hand — and you'd end up with folders like `project_final_v2_FINAL_really_final.zip`.
 
 **WSL** (Windows Subsystem for Linux) lets you run real Linux inside Windows, without a heavy virtual machine.
 
