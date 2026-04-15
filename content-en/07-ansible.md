@@ -255,6 +255,12 @@ A: No need to install software on the target servers. Ansible connects via SSH. 
 **Q: What is a playbook?**
 A: A YAML file that describes a list of tasks to execute on servers. It's the main file you write and run.
 
+**Q: What is an Ansible inventory?**
+A: The file that lists the servers Ansible will act on. It contains IP addresses or hostnames, organized in groups (web, db, etc.). Ansible connects via SSH to each machine in the inventory to execute tasks.
+
+**Q: What is an Ansible role?**
+A: A way to organize a playbook into reusable components. A role bundles tasks, files, templates, and variables related to a function (e.g., a "docker" role that installs and configures Docker). You can reuse the same role across multiple playbooks.
+
 ## Best practices
 
 - **Use Ansible modules, not `command`/`shell`.** Modules (`apt`, `service`, `copy`) are idempotent. `command: apt install nginx` is not — it will reinstall on every run.

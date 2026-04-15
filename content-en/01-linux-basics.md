@@ -492,6 +492,12 @@ A: Running a command as administrator (root). Required for installing software, 
 **Q: How do you view the logs of a service?**
 A: `journalctl -u service_name` or look in `/var/log/`.
 
+**Q: What is a process?**
+A: A program currently running. When you run `python3 main.py`, it creates a process. Each process has a unique number (PID). You can see them with `ps aux` or `top`.
+
+**Q: What is the PATH?**
+A: An environment variable containing the list of directories where the system looks for programs. When you type `python3`, Linux searches through PATH directories to find the `python3` file. If you get "command not found", it's often because the program isn't in the PATH.
+
 ## Common mistakes
 
 - **"Permission denied"** → You're missing the rights. Try with `sudo` or check permissions (`ls -la`).

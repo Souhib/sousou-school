@@ -354,6 +354,15 @@ A: A filter that controls incoming and outgoing network traffic. It allows or bl
 **Q: What does a 502 code mean?**
 A: Bad Gateway — the proxy/load balancer server can't reach the server behind it. Usually the application server has crashed.
 
+**Q: Difference between HTTP and HTTPS?**
+A: HTTPS = HTTP + encryption (TLS/SSL). Data is encrypted between your browser and the server — nobody can read it in transit. The padlock in the browser = HTTPS. Today, every serious site must use HTTPS.
+
+**Q: What is a reverse proxy?**
+A: A server that sits in front of your application and receives requests on its behalf. It can distribute traffic between multiple servers, handle HTTPS, cache content, etc. Nginx is the most common reverse proxy.
+
+**Q: What is a load balancer?**
+A: A tool that distributes traffic across multiple servers. If you have 3 backend servers, the load balancer sends each request to a different server to spread the load. If a server goes down, the load balancer stops sending traffic to it.
+
 ## Common Mistakes
 
 - **Forgetting to allow SSH before enabling ufw** → You lock yourself out of the remote server.

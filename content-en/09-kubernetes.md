@@ -450,6 +450,18 @@ A: The Controller detects that the number of replicas no longer matches the desi
 **Q: What is a Namespace?**
 A: A way to isolate resources within a cluster. Useful for separating environments (dev, staging, prod) or teams.
 
+**Q: What is an Ingress?**
+A: A K8s object that manages HTTP(S) routing to Services. It lets you say "requests to `api.mysite.com` go to the backend Service" and "requests to `mysite.com` go to the frontend Service". It's the HTTP entry point of the cluster.
+
+**Q: What is a ConfigMap and a Secret?**
+A: K8s objects for storing configuration. A **ConfigMap** stores non-sensitive data (URLs, feature flags). A **Secret** stores sensitive data (passwords, API keys) encoded in base64. Both are injected into pods as environment variables or files.
+
+**Q: What is a liveness probe and a readiness probe?**
+A: Health checks that K8s runs on your pods. The **liveness probe** checks if the pod is alive — if it fails, K8s restarts the pod. The **readiness probe** checks if the pod is ready to receive traffic — if it fails, K8s stops sending requests to it without restarting it.
+
+**Q: Difference between ClusterIP, NodePort, and LoadBalancer?**
+A: Three types of K8s Services. **ClusterIP** (default) = accessible only from inside the cluster. **NodePort** = accessible from outside via a port on each node (e.g., `node-ip:30080`). **LoadBalancer** = creates an external load balancer (cloud provider) that redirects to the Service. In production, you typically use an Ingress in front of a ClusterIP Service.
+
 ## Best practices
 
 - **Declare resources (CPU/RAM).** Without `resources.requests` and `resources.limits`, a pod can consume the entire node and crash the others. Always define limits.

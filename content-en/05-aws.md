@@ -611,6 +611,12 @@ A: Lambda for short tasks (<15 min) and one-off jobs. ECS/EKS for containerized 
 **Q: What is a cold start?**
 A: The first execution of a Lambda is slower because AWS has to start an environment. Subsequent executions (warm start) are faster.
 
+**Q: Difference between horizontal and vertical scaling?**
+A: Vertical = increase the power of a machine (more CPU, more RAM). Horizontal = add more machines. Vertical has a physical limit, horizontal is virtually unlimited. In the cloud, horizontal scaling is preferred.
+
+**Q: What is the shared responsibility model?**
+A: AWS manages security **of** the cloud (datacenters, physical network, hypervisors). You manage security **in** the cloud (your data, your Security Groups, your IAM policies, your code). If your Security Group is open to everyone, that's your fault, not AWS's.
+
 > **System design exercises:** To practice answering questions like "how would you deploy this app?", check out the [5 system design exercises](system-design-exercises.md). This is the kind of question you'll be asked in DevOps interviews.
 
 ## Best practices

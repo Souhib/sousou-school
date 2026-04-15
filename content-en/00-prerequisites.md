@@ -625,6 +625,9 @@ A: A parallel copy of the code. You develop on it without touching the main bran
 **Q: Difference between `git pull` and `git fetch`?**
 A: `git fetch` downloads remote changes without applying them. `git pull` = `git fetch` + `git merge`. Pull applies the changes directly.
 
+**Q: What is a Pull Request?**
+A: A request to merge code. You create a branch, work on it, and when it's ready you open a PR on GitHub. A colleague reviews your code (code review), and if it's good, you merge into main. It ensures code is checked before it reaches production.
+
 ## Best practices
 
 - **Small, frequent commits.** One commit = one logical change. Not "I worked for 3 days and commit everything at once". That's impossible to review and rollback.

@@ -37,6 +37,18 @@ For each technology, the questions you'll be asked in interviews.
 <details><summary>💡 Hint</summary>Think of the cycle: create a branch → work → push → request a review → merge.</details>
 <details><summary>✅ Answer</summary>We create a branch per feature, commit on it, push, and open a Pull Request. A colleague reviews the code, and if it's good we merge into main. Nobody pushes directly to main — everything goes through a PR.</details>
 
+**Q: What's the difference between `git add` and `git commit`?**
+<details><summary>💡 Hint</summary>One prepares files, the other saves them. Think of a box you fill then seal.</details>
+<details><summary>✅ Answer</summary><code>git add</code> stages files (staging area), <code>git commit</code> saves them in the history. It's like putting items in a box (add) then sealing and labeling the box (commit).</details>
+
+**Q: What is a branch?**
+<details><summary>💡 Hint</summary>Think of a parallel universe of the code where you can work without touching the main version.</details>
+<details><summary>✅ Answer</summary>A parallel copy of the code. You develop on it without touching the main branch (main). When it's ready, you merge.</details>
+
+**Q: What is a Pull Request?**
+<details><summary>💡 Hint</summary>It's the mechanism to propose your changes to the team before integrating them into the main branch.</details>
+<details><summary>✅ Answer</summary>A request to merge code. You create a branch, work on it, and when it's ready you open a PR on GitHub. A colleague reviews your code (code review), and if it's good, you merge into main. It ensures code is checked before it reaches production.</details>
+
 ## Linux
 
 **Q: Explain the 755 permissions**
@@ -59,6 +71,26 @@ For each technology, the questions you'll be asked in interviews.
 <details><summary>💡 Hint</summary>The <code>ss</code> command with the right flags, combined with <code>grep</code> to filter.</details>
 <details><summary>✅ Answer</summary><code>ss -tlnp | grep &lt;port&gt;</code> — shows the process listening on that port.</details>
 
+**Q: What is sudo?**
+<details><summary>💡 Hint</summary>Think "Run as administrator" on Windows.</details>
+<details><summary>✅ Answer</summary>"Super User DO" — run a command as administrator (root). Needed to install software, modify system config, etc.</details>
+
+**Q: Difference between `>` and `>>`?**
+<details><summary>💡 Hint</summary>Both redirect command output to a file. One overwrites, the other doesn't.</details>
+<details><summary>✅ Answer</summary><code>></code> overwrites the file. <code>>></code> appends to the end. Example: <code>echo "log" > file.txt</code> replaces the content, <code>echo "log" >> file.txt</code> adds a line.</details>
+
+**Q: How do you view a service's logs?**
+<details><summary>💡 Hint</summary>There's a specific command for systemd services, and a classic directory for system logs.</details>
+<details><summary>✅ Answer</summary><code>journalctl -u service_name</code> for systemd services, or look in <code>/var/log/</code> for classic system logs.</details>
+
+**Q: What is a process?**
+<details><summary>💡 Hint</summary>Every program running on your machine is one. Each has a unique number.</details>
+<details><summary>✅ Answer</summary>A program currently running. When you run <code>python3 main.py</code>, it creates a process. Each process has a unique number (PID). You can see them with <code>ps aux</code> or <code>top</code>.</details>
+
+**Q: What is the PATH?**
+<details><summary>💡 Hint</summary>It's what the system checks when you type a program name in the terminal. If the program isn't there...</details>
+<details><summary>✅ Answer</summary>An environment variable containing the list of directories where the system looks for programs. When you type <code>python3</code>, Linux searches through PATH directories to find the file. If you get "command not found", it's often because the program isn't in the PATH.</details>
+
 ## Networking
 
 **Q: What is an IP address?**
@@ -80,6 +112,34 @@ For each technology, the questions you'll be asked in interviews.
 **Q: A user tells you "the site doesn't work" — where do you start?**
 <details><summary>💡 Hint</summary>A command that gives you the HTTP response code. The code tells you what type of problem it is (network, proxy, code).</details>
 <details><summary>✅ Answer</summary><code>curl</code> the site to see the response code (200, 502, timeout). If timeout → network/DNS problem. If 502 → the app behind the proxy is down. If 500 → bug in the code.</details>
+
+**Q: What happens when you type a URL in your browser?**
+<details><summary>💡 Hint</summary>5 steps: address resolution, request, server-side processing, response, rendering. Think DNS, HTTP, and the browser.</details>
+<details><summary>✅ Answer</summary>1. <strong>DNS resolution</strong> — the browser asks a DNS to translate the domain name into an IP address. 2. <strong>Sending the request</strong> — the browser sends an HTTP request to the server. 3. <strong>Server-side processing</strong> — the server receives the request and prepares the response. 4. <strong>Server response</strong> — the server sends back the content (HTML/CSS/JS and data in JSON). 5. <strong>Rendering</strong> — the browser assembles and displays the page.</details>
+
+**Q: What is a CIDR /24?**
+<details><summary>💡 Hint</summary>It's a notation to describe a subnet. The number after / indicates how many IP addresses are available.</details>
+<details><summary>✅ Answer</summary>A subnet of 256 IP addresses. Example: 10.0.1.0/24 = 10.0.1.0 to 10.0.1.255. The higher the number after /, the fewer addresses.</details>
+
+**Q: What is a firewall?**
+<details><summary>💡 Hint</summary>Think of a bouncer controlling who enters and exits a building.</details>
+<details><summary>✅ Answer</summary>A filter that controls incoming and outgoing network traffic. It allows or blocks traffic based on rules (port, source IP, protocol). On Linux, <code>ufw</code> is a simple tool to configure the firewall.</details>
+
+**Q: What does a 502 code mean?**
+<details><summary>💡 Hint</summary>It's a proxy problem — the server receiving your request can't reach the server behind it.</details>
+<details><summary>✅ Answer</summary>Bad Gateway — the proxy/load balancer server can't reach the application server behind it. Common cause: the application has crashed.</details>
+
+**Q: Difference between HTTP and HTTPS?**
+<details><summary>💡 Hint</summary>The S stands for "Secure". Think of the padlock in the browser's address bar.</details>
+<details><summary>✅ Answer</summary>HTTPS = HTTP + encryption (TLS/SSL). Data is encrypted between your browser and the server — nobody can read it in transit. The padlock in the browser = HTTPS. Today, every serious site must use HTTPS.</details>
+
+**Q: What is a reverse proxy?**
+<details><summary>💡 Hint</summary>It's an intermediate server between users and your application. It can do several useful things (traffic distribution, HTTPS, caching).</details>
+<details><summary>✅ Answer</summary>A server that sits in front of your application and receives requests on its behalf. It can distribute traffic between multiple servers, handle HTTPS, cache content, etc. Nginx is the most common reverse proxy.</details>
+
+**Q: What is a load balancer?**
+<details><summary>💡 Hint</summary>If you have multiple servers, how do you distribute requests between them?</details>
+<details><summary>✅ Answer</summary>A tool that distributes traffic across multiple servers. If you have 3 backend servers, the load balancer sends each request to a different server to spread the load. If a server goes down, the load balancer stops sending traffic to it.</details>
 
 ## Docker
 
@@ -107,6 +167,30 @@ For each technology, the questions you'll be asked in interviews.
 <details><summary>💡 Hint</summary>One can be overridden at launch, the other can't. Which one is used 90% of the time?</details>
 <details><summary>✅ Answer</summary>CMD = default command, can be overridden at launch. ENTRYPOINT = fixed command, arguments from <code>docker run</code> are appended after it. In practice, CMD is enough 90% of the time.</details>
 
+**Q: What is Docker?**
+<details><summary>💡 Hint</summary>Think of a way to package an application with everything it needs to run the same way everywhere.</details>
+<details><summary>✅ Answer</summary>A tool that packages an application with all its dependencies into an isolated container. The container runs the same way everywhere (your PC, a server, the cloud).</details>
+
+**Q: What is Docker Compose?**
+<details><summary>💡 Hint</summary>When you have multiple containers (backend, frontend, database), you need a tool to manage them together.</details>
+<details><summary>✅ Answer</summary>A tool for managing multiple containers together with a YAML file. You define services, networks, and volumes, then <code>docker compose up</code> launches everything at once.</details>
+
+**Q: What is a Docker volume?**
+<details><summary>💡 Hint</summary>By default, container data disappears when it's deleted. How do you persist data?</details>
+<details><summary>✅ Answer</summary>Persistent storage. Without a volume, data disappears when the container is deleted. Essential for databases — data survives container restarts.</details>
+
+**Q: Difference between COPY and ADD in a Dockerfile?**
+<details><summary>💡 Hint</summary>Both copy files. One does more than the other — but is that always desirable?</details>
+<details><summary>✅ Answer</summary>Both copy files into the image. <code>COPY</code> does a simple copy. <code>ADD</code> can also decompress archives (.tar.gz) and download from URLs. In practice, always use <code>COPY</code> — it's more explicit.</details>
+
+**Q: What is a Docker registry?**
+<details><summary>💡 Hint</summary>Think of GitHub, but for Docker images instead of source code.</details>
+<details><summary>✅ Answer</summary>A server that stores Docker images. Docker Hub is the default public registry. In the workplace, private registries (AWS ECR, GitHub Container Registry) are often used to store your own images.</details>
+
+**Q: Why does the order of instructions in a Dockerfile matter?**
+<details><summary>💡 Hint</summary>Docker uses a layer caching system. If a layer changes, all subsequent layers are rebuilt.</details>
+<details><summary>✅ Answer</summary>Because of caching. Docker executes each instruction as a layer. If a layer hasn't changed, Docker reuses the cache. By putting <code>COPY requirements.txt</code> + <code>RUN pip install</code> BEFORE <code>COPY . .</code>, dependencies are only reinstalled when they actually change — not on every code modification.</details>
+
 ## CI/CD
 
 **Q: What is CI/CD?**
@@ -128,6 +212,26 @@ For each technology, the questions you'll be asked in interviews.
 **Q: How do you rollback if a deployment breaks production?**
 <details><summary>💡 Hint</summary>Docker images are tagged with the commit hash. How do you use that to go back?</details>
 <details><summary>✅ Answer</summary>You redeploy the previous Docker image. That's why we tag images with the commit hash — you can go back to any version in a few minutes.</details>
+
+**Q: What are the stages of a typical CI/CD pipeline?**
+<details><summary>💡 Hint</summary>4 stages in order. If the first fails, the next ones don't run.</details>
+<details><summary>✅ Answer</summary>Lint (code quality) → Tests → Build (artifact construction) → Deploy. Each stage blocks the next if it fails.</details>
+
+**Q: Difference between Continuous Delivery and Continuous Deployment?**
+<details><summary>💡 Hint</summary>Both start with "Continuous D...". The difference: does a human press a button before prod?</details>
+<details><summary>✅ Answer</summary>Delivery = ready to deploy but manual button. Deployment = automatic deployment to prod. Most companies do Delivery (a human validates before prod).</details>
+
+**Q: What is a runner?**
+<details><summary>💡 Hint</summary>The pipeline doesn't execute itself in a vacuum — it needs a machine to run on.</details>
+<details><summary>✅ Answer</summary>The machine (server) that executes pipeline jobs. GitHub provides free runners (<code>ubuntu-latest</code>). You can also use self-hosted runners for more control.</details>
+
+**Q: What is a blue/green deployment?**
+<details><summary>💡 Hint</summary>Two identical environments. One serves prod, the other waits for the new version. You switch traffic all at once.</details>
+<details><summary>✅ Answer</summary>A deployment strategy with two identical environments. "Blue" serves prod, you deploy the new version to "green", test it, then switch the traffic. If it breaks, you switch back in seconds. Advantage: instant rollback.</details>
+
+**Q: What is a canary deployment?**
+<details><summary>💡 Hint</summary>Instead of deploying to everyone at once, you start with a small percentage. The name comes from canaries in coal mines.</details>
+<details><summary>✅ Answer</summary>You deploy the new version to a small percentage of servers (e.g., 5%). You monitor the metrics. If everything's fine, you gradually increase (25% → 50% → 100%). If it breaks, only 5% of users are impacted.</details>
 
 ## AWS
 
@@ -217,6 +321,50 @@ For each technology, the questions you'll be asked in interviews.
 <details><summary>💡 Hint</summary>An ECS mode where you don't manage any servers. You just provide your Docker image and the amount of CPU/RAM.</details>
 <details><summary>✅ Answer</summary>A "serverless" mode for ECS — you provide your Docker image, define CPU and RAM, AWS launches the container somewhere in the cloud. You never see a machine, you don't manage any servers. You only pay for the CPU/RAM used.</details>
 
+**Q: What is AWS?**
+<details><summary>💡 Hint</summary>The world's largest cloud provider. You rent computing resources instead of buying them.</details>
+<details><summary>✅ Answer</summary>A cloud computing provider. You rent servers (EC2), storage (S3), databases (RDS) and many other services, on demand. You pay for what you use.</details>
+
+**Q: What is RDS?**
+<details><summary>💡 Hint</summary>Think of a database where AWS handles all the maintenance for you.</details>
+<details><summary>✅ Answer</summary>Relational Database Service — a managed database by AWS. You choose the engine (PostgreSQL, MySQL...), AWS handles backups, updates, and high availability.</details>
+
+**Q: What is DynamoDB?**
+<details><summary>💡 Hint</summary>AWS's NoSQL alternative. Instead of SQL tables with fixed columns, you store...</details>
+<details><summary>✅ Answer</summary>A NoSQL managed database by AWS. Instead of SQL tables with fixed columns, you store flexible JSON documents. Scaling is automatic and pricing is per-request.</details>
+
+**Q: When to use RDS vs DynamoDB?**
+<details><summary>💡 Hint</summary>Think about the data type: does it have relationships (users → orders → products)?</details>
+<details><summary>✅ Answer</summary>RDS when your data has relationships and you need complex SQL queries. DynamoDB for simple data at very high traffic (sessions, cache, counters). When in doubt, RDS — it's more versatile.</details>
+
+**Q: What is ECS?**
+<details><summary>💡 Hint</summary>You give it Docker images, it runs, monitors and scales them. With Fargate, you don't even manage servers.</details>
+<details><summary>✅ Answer</summary>Elastic Container Service — you give AWS your Docker images, and it runs, monitors and scales them. With Fargate, you manage no servers — you pay only for CPU and RAM used.</details>
+
+**Q: What is EKS?**
+<details><summary>💡 Hint</summary>Managed Kubernetes on AWS. AWS manages one part, you manage the other. The advantage is portability.</details>
+<details><summary>✅ Answer</summary>Elastic Kubernetes Service — managed Kubernetes on AWS. AWS manages the control plane, you manage the workers. Advantage over ECS: K8s is a standard portable across any cloud.</details>
+
+**Q: What is Lambda?**
+<details><summary>💡 Hint</summary>Code that runs without a server. You only pay when your code runs.</details>
+<details><summary>✅ Answer</summary>Serverless — you send your code, AWS runs it when needed, you pay per execution. No server to manage. Ideal for short, one-off tasks (&lt;15 min).</details>
+
+**Q: When to use Lambda vs EC2 vs ECS?**
+<details><summary>💡 Hint</summary>Think about execution duration and whether the app needs to run continuously or not.</details>
+<details><summary>✅ Answer</summary>Lambda for short tasks (&lt;15 min) and one-off. ECS/EKS for containerized apps running continuously with auto-scaling. EC2 when you need full server control or for small simple projects.</details>
+
+**Q: What is a cold start?**
+<details><summary>💡 Hint</summary>The first Lambda execution is slower. Why?</details>
+<details><summary>✅ Answer</summary>The first Lambda execution is slower because AWS has to start an environment. Subsequent executions (warm start) are faster because the environment is already ready.</details>
+
+**Q: Difference between horizontal and vertical scaling?**
+<details><summary>💡 Hint</summary>One adds power to a machine, the other adds machines. Which one has a physical limit?</details>
+<details><summary>✅ Answer</summary>Vertical = increase the power of a machine (more CPU, more RAM). Horizontal = add more machines. Vertical has a physical limit, horizontal is virtually unlimited. In the cloud, horizontal scaling is preferred.</details>
+
+**Q: What is the shared responsibility model?**
+<details><summary>💡 Hint</summary>AWS and you each have a share of responsibility for security. Who manages what?</details>
+<details><summary>✅ Answer</summary>AWS manages security <strong>of</strong> the cloud (datacenters, physical network, hypervisors). You manage security <strong>in</strong> the cloud (your data, your Security Groups, your IAM policies, your code). If your Security Group is open to everyone, that's your fault, not AWS's.</details>
+
 ## Terraform
 
 **Q: What is Infrastructure as Code?**
@@ -238,6 +386,22 @@ For each technology, the questions you'll be asked in interviews.
 **Q: Someone modified the infrastructure by hand in the AWS console — what happens?**
 <details><summary>💡 Hint</summary>The state file no longer matches reality. Terraform will detect the difference on the next <code>plan</code>. What is that called?</details>
 <details><summary>✅ Answer</summary>That's drift. On the next <code>terraform plan</code>, Terraform shows the differences between the code and reality. Either you import the change into the code, or <code>apply</code> overwrites the manual change.</details>
+
+**Q: What is Terraform?**
+<details><summary>💡 Hint</summary>A tool for describing your infrastructure in code files instead of clicking in a console.</details>
+<details><summary>✅ Answer</summary>An Infrastructure as Code tool. You describe your infra in HCL files, Terraform creates/modifies/deletes it. Versionable, reproducible, collaborative.</details>
+
+**Q: Terraform vs CloudFormation?**
+<details><summary>💡 Hint</summary>One is multi-cloud, the other is specific to a single cloud provider.</details>
+<details><summary>✅ Answer</summary>Terraform is multi-cloud (AWS, GCP, Azure). CloudFormation is AWS-specific. Terraform has a larger community and more readable syntax.</details>
+
+**Q: What is a Terraform module?**
+<details><summary>💡 Hint</summary>Think of a function in programming — reusable code you call with parameters.</details>
+<details><summary>✅ Answer</summary>A reusable block of Terraform code. Instead of copy-pasting the same config for each environment, you create a module and call it with different parameters. It's like a function in programming.</details>
+
+**Q: What is a Terraform provider?**
+<details><summary>💡 Hint</summary>Terraform alone can't do anything. It needs plugins to talk to AWS, GCP, etc.</details>
+<details><summary>✅ Answer</summary>A plugin that connects Terraform to a service (AWS, GCP, Azure, GitHub...). The AWS provider allows Terraform to create EC2s, S3 buckets, RDS instances. Without a provider, Terraform can't talk to anything.</details>
 
 ## Ansible
 
@@ -261,6 +425,14 @@ For each technology, the questions you'll be asked in interviews.
 <details><summary>💡 Hint</summary>Ansible has a built-in tool to encrypt files. Its name makes you think of a safe.</details>
 <details><summary>✅ Answer</summary>With Ansible Vault. You encrypt files containing secrets, and at execution time you pass <code>--ask-vault-pass</code> to decrypt them.</details>
 
+**Q: What is an Ansible inventory?**
+<details><summary>💡 Hint</summary>Ansible needs to know which machines to act on. There's a file for that.</details>
+<details><summary>✅ Answer</summary>The file that lists the servers Ansible will act on. It contains IP addresses or hostnames, organized in groups (web, db, etc.). Ansible connects via SSH to each machine in the inventory to execute tasks.</details>
+
+**Q: What is an Ansible role?**
+<details><summary>💡 Hint</summary>When your playbook grows, you need to organize it into reusable components.</details>
+<details><summary>✅ Answer</summary>A way to organize a playbook into reusable components. A role bundles tasks, files, templates, and variables related to a function (e.g., a "docker" role that installs and configures Docker). You can reuse the same role across multiple playbooks.</details>
+
 ## Kubernetes
 
 **Q: What is Kubernetes?**
@@ -283,6 +455,38 @@ For each technology, the questions you'll be asked in interviews.
 <details><summary>💡 Hint</summary>K8s replaces pods one by one, not all at once. It waits for the new one to be ready before deleting the old one. What is that called?</details>
 <details><summary>✅ Answer</summary>Rolling update (the default). Kubernetes creates a new pod with the new version, waits for it to be ready (health check), then deletes the old one. Pods are replaced one by one — users don't see any downtime.</details>
 
+**Q: Difference between Docker and Kubernetes?**
+<details><summary>💡 Hint</summary>One runs ONE container, the other orchestrates dozens/hundreds across multiple machines.</details>
+<details><summary>✅ Answer</summary>Docker runs ONE container. Kubernetes orchestrates dozens/hundreds of containers across multiple machines (scheduling, scaling, self-healing).</details>
+
+**Q: What is a Deployment?**
+<details><summary>💡 Hint</summary>You never create pods directly. You go through an object that manages them for you.</details>
+<details><summary>✅ Answer</summary>An object that manages a group of identical pods. It maintains the desired replica count, manages updates (rolling update), and recreates crashed pods.</details>
+
+**Q: What is a K8s Service?**
+<details><summary>💡 Hint</summary>Pods have IPs that change on every restart. You need a stable access point.</details>
+<details><summary>✅ Answer</summary>A stable network access point to a group of pods. Pods have ephemeral IPs, the Service has a fixed IP and distributes traffic across the pods.</details>
+
+**Q: What is a Namespace?**
+<details><summary>💡 Hint</summary>Think of folders to organize and isolate resources in a cluster.</details>
+<details><summary>✅ Answer</summary>A way to isolate resources in a cluster. Useful for separating environments (dev, staging, prod) or teams.</details>
+
+**Q: What is an Ingress?**
+<details><summary>💡 Hint</summary>How do you make external HTTP requests reach the right Services inside the cluster?</details>
+<details><summary>✅ Answer</summary>A K8s object that manages HTTP(S) routing to Services. It lets you say "requests to <code>api.mysite.com</code> go to the backend Service" and "requests to <code>mysite.com</code> go to the frontend Service". It's the HTTP entry point of the cluster.</details>
+
+**Q: What is a ConfigMap and a Secret?**
+<details><summary>💡 Hint</summary>How do you pass configuration and secrets to your pods without putting them in the Docker image?</details>
+<details><summary>✅ Answer</summary>K8s objects for storing configuration. A <strong>ConfigMap</strong> stores non-sensitive data (URLs, feature flags). A <strong>Secret</strong> stores sensitive data (passwords, API keys) encoded in base64. Both are injected into pods as environment variables or files.</details>
+
+**Q: What is a liveness probe and a readiness probe?**
+<details><summary>💡 Hint</summary>K8s needs to know if your pods are alive and ready. It uses two different types of checks.</details>
+<details><summary>✅ Answer</summary>Health checks that K8s runs on your pods. The <strong>liveness probe</strong> checks if the pod is alive — if it fails, K8s restarts the pod. The <strong>readiness probe</strong> checks if the pod is ready for traffic — if it fails, K8s stops sending requests without restarting it.</details>
+
+**Q: Difference between ClusterIP, NodePort, and LoadBalancer?**
+<details><summary>💡 Hint</summary>These are the three K8s Service types. Each exposes the Service at a different level of accessibility.</details>
+<details><summary>✅ Answer</summary>Three K8s Service types. <strong>ClusterIP</strong> (default) = accessible only from inside the cluster. <strong>NodePort</strong> = accessible from outside via a port on each node. <strong>LoadBalancer</strong> = creates an external load balancer (cloud provider) redirecting to the Service. In production, you typically use an Ingress in front of a ClusterIP Service.</details>
+
 ## Monitoring
 
 **Q: What are the 3 pillars of observability?**
@@ -304,6 +508,26 @@ For each technology, the questions you'll be asked in interviews.
 **Q: What's the difference between Prometheus and Grafana?**
 <details><summary>💡 Hint</summary>One collects data, the other displays it. Think sensor vs dashboard.</details>
 <details><summary>✅ Answer</summary>Prometheus collects and stores metrics (it scrapes /metrics every 15s). Grafana displays them in dashboards. Prometheus = the sensor, Grafana = the dashboard.</details>
+
+**Q: Why is monitoring important?**
+<details><summary>💡 Hint</summary>Without monitoring, how do you know your app is working correctly?</details>
+<details><summary>✅ Answer</summary>Without monitoring, you don't know if your app works correctly. You detect problems before users, identify bottlenecks, and have data for decisions.</details>
+
+**Q: What is Prometheus?**
+<details><summary>💡 Hint</summary>A metrics collection tool. It fetches data itself (pull model) instead of waiting for apps to send it.</details>
+<details><summary>✅ Answer</summary>A metrics collection system using pull model. It scrapes <code>/metrics</code> endpoints from applications at regular intervals and stores data as time series.</details>
+
+**Q: What is Grafana?**
+<details><summary>💡 Hint</summary>It's the visualization tool that goes with Prometheus. Think dashboards and graphs.</details>
+<details><summary>✅ Answer</summary>A visualization tool. It connects to data sources (Prometheus, etc.) and creates dashboards with graphs and alerts.</details>
+
+**Q: Difference between pull and push model?**
+<details><summary>💡 Hint</summary>Who initiates data collection? The monitoring server, or the application itself?</details>
+<details><summary>✅ Answer</summary>Pull = Prometheus fetches the data (scrape). Push = applications send the data. Pull is simpler to manage and debug.</details>
+
+**Q: What are SLI, SLO, and SLA?**
+<details><summary>💡 Hint</summary>Three levels: what you measure, what you aim for, what you contractually commit to.</details>
+<details><summary>✅ Answer</summary><strong>SLI</strong> (Service Level Indicator) = the measured metric (e.g., 99.2% of requests respond in under 200ms). <strong>SLO</strong> (Service Level Objective) = the internal target (e.g., we aim for 99.5%). <strong>SLA</strong> (Service Level Agreement) = the contractual commitment with the client (e.g., if we drop below 99%, we refund). SLI measures, SLO guides, SLA commits.</details>
 
 ---
 
