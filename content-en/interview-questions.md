@@ -301,6 +301,14 @@ For each technology, the questions you'll be asked in interviews.
 <details><summary>💡 Hint</summary>One is permanent (a person or a program), the other is temporary (you "assume" it when needed).</details>
 <details><summary>✅ Answer</summary>User = a permanent account for a person or a program (with fixed credentials). Role = a set of temporary permissions that a service can "assume" (e.g.: an EC2 that needs to access S3 uses a role, not a user).</details>
 
+**Q: What is an IAM Policy?**
+<details><summary>💡 Hint</summary>Think of the document that describes permissions. It's in JSON format.</details>
+<details><summary>✅ Answer</summary>A JSON document that defines permissions: which actions (e.g.: <code>s3:GetObject</code>) are allowed or denied, on which resources (e.g.: a specific bucket). You attach it to a User, Group or Role to grant these rights.</details>
+
+**Q: What is the principle of least privilege?**
+<details><summary>💡 Hint</summary>A fundamental security rule: you grant the minimum permissions needed, nothing more.</details>
+<details><summary>✅ Answer</summary>Grant only the permissions strictly necessary to do the job, and nothing more. If a Lambda only needs to read an S3 bucket, you give it only <code>s3:GetObject</code> on that specific bucket — not <code>AdministratorAccess</code>. This limits the damage if credentials are compromised.</details>
+
 ### Lambda and SQS
 
 **Q: When to use Lambda vs EC2?**

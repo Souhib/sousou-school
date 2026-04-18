@@ -571,6 +571,12 @@ A: Public = accessible from the Internet (via Internet Gateway). Private = no di
 **Q: What is IAM?**
 A: Identity and Access Management -- AWS's permissions system. Users, roles, policies. Principle of least privilege: you only give the necessary permissions.
 
+**Q: What is an IAM Policy?**
+A: A JSON document that defines permissions: which actions (e.g.: `s3:GetObject`) are allowed or denied, on which resources (e.g.: a specific bucket). You attach it to a User, Group or Role to grant these rights.
+
+**Q: What is the principle of least privilege?**
+A: Grant only the permissions strictly necessary to do the job, and nothing more. If a Lambda only needs to read an S3 bucket, you give it only `s3:GetObject` on that specific bucket -- not `AdministratorAccess`. This limits the damage if credentials are compromised.
+
 **Q: What is a Security Group?**
 A: A virtual firewall for EC2 instances. It controls inbound and outbound traffic by port and source IP.
 
