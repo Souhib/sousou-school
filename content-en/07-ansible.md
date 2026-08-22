@@ -1,6 +1,6 @@
 # Module 7: Ansible (Optional)
 
-> **Prerequisites:** Module 5 (AWS — having an EC2) or Module 6 (Terraform — having created an EC2 with Terraform)
+> **Prerequisites:** [Module 5](05-aws.md) (AWS — having an EC2) or [Module 6](06-terraform.md) (Terraform — having created an EC2 with Terraform)
 
 > **In a nutshell:** Terraform creates the servers, Ansible configures them. You learn to automate Docker installation, project cloning, and app launch on a remote server — all with a single YAML file and one command.
 
@@ -16,7 +16,7 @@
 - **Module** = a specific action (install software, copy a file, start a service)
 - **Idempotence** = you can re-run the checklist 10 times, the result will be the same (if the paint is already done, we don't repaint)
 
-**The key thing:** Ansible is **agentless** — no need to install anything on the target servers. Other similar tools (Chef, Puppet) require installing a program ("agent") on each server you want to manage. Ansible doesn't: it simply connects via SSH (the remote connection covered in Module 1) and runs the tasks. That's what makes it easy to get started with.
+**The key thing:** Ansible is **agentless** — no need to install anything on the target servers. Other similar tools (Chef, Puppet) require installing a program ("agent") on each server you want to manage. Ansible doesn't: it simply connects via SSH (the remote connection covered in [Module 1](01-linux-basics.md)) and runs the tasks. That's what makes it easy to get started with.
 
 ## Installation
 
@@ -155,7 +155,7 @@ vars:
 
 ## Hands-on Project: Provision the EC2 server
 
-We take the server created in Module 5 or 6, and automate its configuration.
+We take the server created in [Module 5](05-aws.md) or [Module 6](06-terraform.md), and automate its configuration.
 
 ### 1. Structure
 

@@ -1,10 +1,10 @@
 # Module 4: CI/CD (GitHub Actions)
 
-> **Prerequisites:** Module 0 (Git, GitHub), Module 3 (Docker -- build, images)
+> **Prerequisites:** [Module 0](00-prerequisites.md) (Git, GitHub), [Module 3](03-docker.md) (Docker -- build, images)
 
 > **In a nutshell:** You automate the verification and deployment of your code with GitHub Actions. On every push, a pipeline checks the code (lint), runs the tests, builds Docker images and pushes them to Docker Hub -- without any human intervention.
 
-> In Module 3, you learned how to build Docker images and run them with `docker compose`. But who builds those images when you push your code? Who checks that the tests pass? Who pushes the images to Docker Hub? That's the role of CI/CD -- automating all of that.
+> In [Module 3](03-docker.md), you learned how to build Docker images and run them with `docker compose`. But who builds those images when you push your code? Who checks that the tests pass? Who pushes the images to Docker Hub? That's the role of CI/CD -- automating all of that.
 
 ## What is CI/CD and why does it exist?
 
@@ -147,7 +147,7 @@ uv run pytest
 | Duration | Milliseconds | Seconds |
 | When | On every save, continuously | On every push, in CI |
 
-**Why both?** Remember Module 3: your `main.py` has **two modes**. Without `DATABASE_URL` it stores tasks in a Python list; with `DATABASE_URL` it talks to PostgreSQL.
+**Why both?** Remember [Module 3](03-docker.md): your `main.py` has **two modes**. Without `DATABASE_URL` it stores tasks in a Python list; with `DATABASE_URL` it talks to PostgreSQL.
 
 But `uv run pytest` runs without `DATABASE_URL`. **So all the PostgreSQL code — half of `main.py` — is never executed by the tests.** If it contained a typo in a SQL query, no test would catch it: it would only break in production.
 
@@ -293,7 +293,7 @@ To test that code you need a database. But a GitHub runner is a blank machine: t
 
 #### Service containers
 
-A service container is a container GitHub starts **before** your steps, that runs alongside them, and that it stops afterwards. Your tests reach it on `localhost`. It's the equivalent of Module 3's `docker compose up`, but managed by GitHub — and thrown away at the end of the job.
+A service container is a container GitHub starts **before** your steps, that runs alongside them, and that it stops afterwards. Your tests reach it on `localhost`. It's the equivalent of [Module 3](03-docker.md)'s `docker compose up`, but managed by GitHub — and thrown away at the end of the job.
 
 Here is the `integration-test` job from the provided `.github/workflows/ci.yml`:
 
@@ -347,7 +347,7 @@ And the `build` job waits for **all** test jobs to pass before building the imag
 
 #### You can check it locally
 
-No need to wait for CI to see the effect: reproduce it on your machine with what you already know from Module 3.
+No need to wait for CI to see the effect: reproduce it on your machine with what you already know from [Module 3](03-docker.md).
 
 ```bash
 # Start a throwaway database.
@@ -384,7 +384,7 @@ The same 7 tests pass in both modes. **The code didn't change by a single line**
 
 **1. `--health-cmd` isn't decoration.** "The container is started" ≠ "the service answers". PostgreSQL takes one to three seconds to boot. Without a health check, your tests start too early and fail one time in three — the worst kind of test, the one that fails at random (a *flaky* test). It's a very common source of CI incidents.
 
-**2. The same code, two configurations.** The `test` job runs the tests in memory; `integration-test` runs **exactly the same ones** against PostgreSQL. That's what proves a codebase is properly configurable — the same idea as Module 3's `depends_on`: the configuration changes, the code doesn't.
+**2. The same code, two configurations.** The `test` job runs the tests in memory; `integration-test` runs **exactly the same ones** against PostgreSQL. That's what proves a codebase is properly configurable — the same idea as [Module 3](03-docker.md)'s `depends_on`: the configuration changes, the code doesn't.
 
 **3. A throwaway environment on every run.** The database is created empty at the start of the job and destroyed at the end. No test can pollute the next one, and no pipeline can disturb another.
 
@@ -481,7 +481,7 @@ A: You deploy the new version to a small percentage of servers (e.g., 5%). You m
 
 - **Deployment strategies**: blue-green (two environments), canary (progressive deployment) -- beyond the rolling update covered in the curriculum
 - **Quality gates**: test coverage thresholds, automated security analysis (SonarQube, Snyk) -- increasingly required
-- **ArgoCD**: GitOps -- the Git repo IS the source of truth for deployment. You push YAML, ArgoCD deploys automatically on K8s (requires having done Module 9 -- Kubernetes)
+- **ArgoCD**: GitOps -- the Git repo IS the source of truth for deployment. You push YAML, ArgoCD deploys automatically on K8s (requires having done [Module 9](09-kubernetes.md) -- Kubernetes)
 
 ## You can move on to the next module if...
 

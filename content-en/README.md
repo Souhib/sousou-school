@@ -46,7 +46,7 @@ Module 0 (Git + WSL) ─▶ Module 1 (Linux) ─▶ Module 2 (Network) ─▶ Mo
                                        optional
 ```
 
-**Legend:** Arrows show dependencies. Module 3 (Docker) is the crossroads — it unlocks CI/CD, K8s, and Monitoring. Modules 7, 8, and 9 are optional/awareness.
+**Legend:** Arrows show dependencies. [Module 3](03-docker.md) (Docker) is the crossroads — it unlocks CI/CD, K8s, and Monitoring. Modules 7, 8, and 9 are optional/awareness.
 
 ## The Hands-on Project
 
@@ -55,14 +55,14 @@ A simple **Task List**: React frontend + FastAPI backend. The app itself is triv
 The code is in [`devops-project/`](devops-project/).
 
 We evolve it with each module:
-- **Module 0-1:** We clone it, we run it locally
-- **Module 3:** We dockerize it
-- **Module 4:** We add a CI/CD pipeline
-- **Module 5:** We practise every AWS service locally, then deploy it on real AWS
-- **Module 6:** We automate the infra with Terraform
-- **Module 7:** We configure the server with Ansible
-- **Module 8:** We monitor it with Prometheus + Grafana
-- **Module 9:** We orchestrate it with Kubernetes
+- **[Module 0](00-prerequisites.md) and [Module 1](01-linux-basics.md):** We clone it, we run it locally
+- **[Module 3](03-docker.md):** We dockerize it
+- **[Module 4](04-cicd.md):** We add a CI/CD pipeline
+- **[Module 5](05-aws.md):** We practise every AWS service locally, then deploy it on real AWS
+- **[Module 6](06-terraform.md):** We automate the infra with Terraform
+- **[Module 7](07-ansible.md):** We configure the server with Ansible
+- **[Module 8](08-monitoring.md):** We monitor it with Prometheus + Grafana
+- **[Module 9](09-kubernetes.md):** We orchestrate it with Kubernetes
 
 ## How long does it take?
 
@@ -90,7 +90,7 @@ What will take you the most time is not the course — it's **finding a job**. T
 - A GitHub account
 - Internet connection
 
-**No credit card needed for nearly the whole course.** The entire cloud section (S3, EC2, RDS, SQS, Lambda, Terraform...) is practised on a **free AWS emulator** running on your machine — see [AWS Locally](floci-aws-local.md). A real AWS account is only required **once**, for the final deployment in Module 5.
+**No credit card needed for nearly the whole course.** The entire cloud section (S3, EC2, RDS, SQS, Lambda, Terraform...) is practised on a **free AWS emulator** running on your machine — see [AWS Locally](floci-aws-local.md). A real AWS account is only required **once**, for the final deployment in [Module 5](05-aws.md).
 
 ## Modules
 

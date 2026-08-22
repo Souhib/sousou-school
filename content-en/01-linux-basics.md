@@ -1,6 +1,6 @@
 # Module 1: Linux Basics
 
-> **Prerequisites:** Module 0 (Git, WSL installed)
+> **Prerequisites:** [Module 0](00-prerequisites.md) (Git, WSL installed)
 
 > **In a nutshell:** You learn to navigate a Linux terminal — files, permissions, processes, environment variables. This is the foundation for everything that follows: Docker, AWS, Ansible, Kubernetes all run on Linux.
 
@@ -138,7 +138,7 @@ sudo apt update
 
 ## Package management (software)
 
-We saw in Module 0 that each language has its own package manager (uv for Python, bun for JS). **Linux also has its own: `apt`.** Here, a package = a piece of software ready to install (curl, git, docker, etc.). `apt` will download and install it in a single command.
+We saw in [Module 0](00-prerequisites.md) that each language has its own package manager (uv for Python, bun for JS). **Linux also has its own: `apt`.** Here, a package = a piece of software ready to install (curl, git, docker, etc.). `apt` will download and install it in a single command.
 
 ```bash
 # Update the list of available software
@@ -213,7 +213,7 @@ API_KEY=abc123
 DEBUG=true
 ```
 
-> This file doesn't need to be created now — it's an example to understand the concept. You'll see it again in Docker (Module 3).
+> This file doesn't need to be created now — it's an example to understand the concept. You'll see it again in Docker ([Module 3](03-docker.md)).
 
 ⚠️ **NEVER commit a `.env` file to Git.** It often contains secrets. We put it in `.gitignore`.
 
@@ -317,7 +317,7 @@ That's what all developers do, even senior ones. It's not cheating.
 
 ## SSH
 
-SSH (Secure Shell) lets you connect to a remote server — you'll use it in Module 5 (AWS) to connect to your EC2.
+SSH (Secure Shell) lets you connect to a remote server — you'll use it in [Module 5](05-aws.md) (AWS) to connect to your EC2.
 
 ```bash
 ssh user@192.168.1.100
@@ -325,7 +325,7 @@ ssh user@192.168.1.100
 # Ctrl+D or "exit" to disconnect.
 ```
 
-> You don't need to use SSH right now — this is just so you know it exists. You'll do it for real in Module 5.
+> You don't need to use SSH right now — this is just so you know it exists. You'll do it for real in [Module 5](05-aws.md).
 
 ## Services (systemctl)
 

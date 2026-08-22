@@ -34,16 +34,16 @@ An analogy: a **flight simulator**. It isn't a plane. But the controls are in th
 
 | You'll actually practise | Where you only used to read |
 |---|---|
-| **S3** — create a bucket, upload and read files back | Module 5 |
-| **SQS** — send a message to a queue, consume it | Module 5 |
-| **DynamoDB** — create a table, write to it, read from it | Module 5 |
-| **Lambda** — deploy a function and run it | Module 5 |
-| **RDS** — create a PostgreSQL database and connect to it | Module 5 |
-| **VPC / Subnet / Security Group** — build a network | Module 5 |
-| **EC2** — launch a server and SSH into it | Module 5 |
-| **CloudWatch Logs, Route 53, Secrets Manager** | Module 5 |
-| **Terraform** — `apply` and `destroy` as often as you like | Module 6 |
-| **Integration tests in CI** — with no AWS secrets in GitHub | Module 5 |
+| **S3** — create a bucket, upload and read files back | [Module 5](05-aws.md) |
+| **SQS** — send a message to a queue, consume it | [Module 5](05-aws.md) |
+| **DynamoDB** — create a table, write to it, read from it | [Module 5](05-aws.md) |
+| **Lambda** — deploy a function and run it | [Module 5](05-aws.md) |
+| **RDS** — create a PostgreSQL database and connect to it | [Module 5](05-aws.md) |
+| **VPC / Subnet / Security Group** — build a network | [Module 5](05-aws.md) |
+| **EC2** — launch a server and SSH into it | [Module 5](05-aws.md) |
+| **CloudWatch Logs, Route 53, Secrets Manager** | [Module 5](05-aws.md) |
+| **Terraform** — `apply` and `destroy` as often as you like | [Module 6](06-terraform.md) |
+| **Integration tests in CI** — with no AWS secrets in GitHub | [Module 5](05-aws.md) |
 
 ---
 

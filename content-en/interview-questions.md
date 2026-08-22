@@ -609,7 +609,7 @@ The built frontend is just static files. No need for a server for this.
 
 **Approach 2 — Nginx in a container** (what we do in the Hands-on Project)
 
-You build the frontend, then serve the files with nginx in a Docker container. This is what we do in Module 3.
+You build the frontend, then serve the files with nginx in a Docker container. This is what we do in [Module 3](03-docker.md).
 
 **When to choose:** When you want everything in the same docker-compose to simplify the deployment, or when you need a custom reverse proxy (complex routing rules).
 

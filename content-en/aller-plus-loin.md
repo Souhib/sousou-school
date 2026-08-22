@@ -23,7 +23,7 @@ Security comes up in almost every DevOps interview. You don't need to be an expe
 |------|-----------|-----------------|
 | **HashiCorp Vault** | Centralized secrets management (passwords, tokens, API keys) | In companies, secrets aren't in `.env` files or GitHub Secrets — they're in Vault. It's the standard |
 | **Trivy / Snyk** | Vulnerability scanners — they analyze your Docker images and dependencies to find security flaws | Increasingly in demand, integrates into the CI/CD pipeline |
-| **Testcontainers** | Automatically starts the containers your tests need, from the test code itself | The logical next step after what you did in Module 4 with service containers. Available for Java, Python, Go, Node... |
+| **Testcontainers** | Automatically starts the containers your tests need, from the test code itself | The logical next step after what you did in [Module 4](04-cicd.md) with service containers. Available for Java, Python, Go, Node... |
 | **Datadog / New Relic** | SaaS monitoring (all-in-one, paid) — metrics, logs, traces in a single interface | Many companies use these instead of Prometheus + Grafana. The concept is the same, only the tool changes |
 | **Loki** | Log collector by Grafana — like ELK but simpler | Complements Prometheus (metrics) with centralized logs |
 

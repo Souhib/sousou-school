@@ -1,10 +1,10 @@
 # Module 9: Kubernetes (Optional)
 
-> **Prerequisites:** Module 3 (Docker — containers, images), Module 2 (Networking — services, ports)
+> **Prerequisites:** [Module 3](03-docker.md) (Docker — containers, images), [Module 2](02-networking.md) (Networking — services, ports)
 
 > **In a nutshell:** You go from "1 server with docker-compose" to an orchestrator that manages dozens of containers automatically. Kubernetes restarts containers that crash, distributes traffic, and lets you scale with a single command.
 
-> **Alternative path:** This module is optional. The main course path is Modules 0 -> 1 -> 2 -> 3 -> 4 -> 5 -> 6. Kubernetes is a parallel branch starting from Module 3 (Docker). You don't need to have completed Modules 5-7 to follow it. If you're just getting started, focus on the main path and come back here later.
+> **Alternative path:** This module is optional. The main course path is Modules 0 -> 1 -> 2 -> 3 -> 4 -> 5 -> 6. Kubernetes is a parallel branch starting from [Module 3](03-docker.md) (Docker). You don't need to have completed Modules 5-7 to follow it. If you're just getting started, focus on the main path and come back here later.
 
 ## What is Kubernetes and why does it exist?
 
@@ -148,7 +148,7 @@ spec:
 | **NodePort** | Accessible from outside via a port on the node |
 | **LoadBalancer** | Creates an external load balancer (cloud) |
 
-> The load balancer concept comes from Module 2 (Networking). Kubernetes Services do the same thing: distribute traffic across pods.
+> The load balancer concept comes from [Module 2](02-networking.md) (Networking). Kubernetes Services do the same thing: distribute traffic across pods.
 
 ### ConfigMap and Secret
 
@@ -465,7 +465,7 @@ A: Three types of K8s Services. **ClusterIP** (default) = accessible only from i
 ## Best practices
 
 - **Declare resources (CPU/RAM).** Without `resources.requests` and `resources.limits`, a pod can consume the entire node and crash the others. Always define limits.
-- **Use health checks.** `readinessProbe` (is the pod ready to receive traffic?) and `livenessProbe` (is the pod still alive?). This is the `/api/health` endpoint we added in Module 3 (Docker). Without this, K8s sends traffic to pods that aren't ready.
+- **Use health checks.** `readinessProbe` (is the pod ready to receive traffic?) and `livenessProbe` (is the pod still alive?). This is the `/api/health` endpoint we added in [Module 3](03-docker.md) (Docker). Without this, K8s sends traffic to pods that aren't ready.
 - **Never deploy `:latest`.** Tag your images with a commit hash or version number. `:latest` changes without warning, and you can't do a clean rollback.
 - **One namespace per environment.** `dev`, `staging`, `prod`. This isolates resources and prevents accidentally deleting prod.
 - **Store your YAML in Git.** K8s deployment files are code — they should be versioned, reviewed in PRs, and never applied manually in prod.

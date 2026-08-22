@@ -1,6 +1,6 @@
 # Module 6: Terraform
 
-> **Prerequisites:** Module 5 (AWS -- understand EC2, VPC, Security Groups before automating them)
+> **Prerequisites:** [Module 5](05-aws.md) (AWS -- understand EC2, VPC, Security Groups before automating them)
 
 > **In a nutshell:** You replace manual clicks in the AWS console with code. Terraform lets you describe your infrastructure in files, versioned in Git, reproducible and shareable. What took you 30 min by hand, Terraform does in 2 min.
 
@@ -18,7 +18,7 @@ With clicks, it's impossible to reproduce, impossible to version, impossible to 
 
 **In one sentence:** Infrastructure as Code (IaC) -- your infra is code, not clicks.
 
-> You created this infrastructure manually in Module 5 (AWS). Terraform automates exactly the same steps.
+> You created this infrastructure manually in [Module 5](05-aws.md) (AWS). Terraform automates exactly the same steps.
 
 ## Installation
 
@@ -379,7 +379,7 @@ We won't create one in this course, but know that they exist.
 
 ## Hands-on Project: Recreate the AWS infrastructure with Terraform
 
-We'll recreate exactly what we did by hand in Module 5, but in code.
+We'll recreate exactly what we did by hand in [Module 5](05-aws.md), but in code.
 
 > **Do it locally first.** Write all the code, run `terraform apply` against local AWS, fix your syntax and dependency mistakes — for free. Once it passes cleanly, do it again on real AWS by simply dropping the `-var="aws_endpoint=..."`.
 >
@@ -716,5 +716,5 @@ A: A plugin that connects Terraform to a service (AWS, GCP, Azure, GitHub...). T
 - [ ] You've run the apply/plan/destroy loop locally, and can explain the difference between "modify in place" and "destroy and recreate"
 - [ ] You've put your state on an S3 backend and verified there's no local file left
 - [ ] You know how to point the AWS provider at a local endpoint, and why the `skip_*` flags are needed
-- [ ] You've recreated the Module 5 infrastructure in Terraform
+- [ ] You've recreated the [Module 5](05-aws.md) infrastructure in Terraform
 - [ ] You've run `terraform destroy` on real AWS to avoid costs

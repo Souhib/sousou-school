@@ -1,6 +1,6 @@
 # Module 2: Networking
 
-> **Prerequisites:** Module 1 (Linux — being comfortable with the terminal)
+> **Prerequisites:** [Module 1](01-linux-basics.md) (Linux — being comfortable with the terminal)
 
 > **In a nutshell:** You understand how machines communicate with each other — IP, ports, DNS, HTTP, firewalls. These concepts come back in every following module: Docker (port mapping, service discovery), AWS (VPC, Security Groups), Kubernetes (Services, load balancing).
 
@@ -75,7 +75,7 @@ ss -tlnp
 
 ## Port Mapping (crucial for Docker)
 
-When you launch a Docker container (Module 3), you'll often see `-p 3000:80` or `-p 8000:8000`. This is **port mapping** (port forwarding).
+When you launch a Docker container ([Module 3](03-docker.md)), you'll often see `-p 3000:80` or `-p 8000:8000`. This is **port mapping** (port forwarding).
 
 ```
 -p PORT_ON_YOUR_MACHINE:PORT_IN_THE_CONTAINER
@@ -87,7 +87,7 @@ When you launch a Docker container (Module 3), you'll often see `-p 3000:80` or 
 docker run -p 3000:80 mon-frontend
 ```
 
-> (We'll cover this command in Module 3 — Docker. For now, just remember the port mapping syntax.)
+> (We'll cover this command in [Module 3](03-docker.md) — Docker. For now, just remember the port mapping syntax.)
 
 This means: "requests arriving on **port 3000 of my machine** are forwarded to **port 80 of the container**."
 
@@ -191,7 +191,7 @@ User → Reverse Proxy (nginx) → Your app (port 8000)
 
 **Analogy:** The receptionist at a hotel. Guests don't go directly to the rooms — they go through the receptionist who directs them.
 
-**The most common tool:** nginx. You'll see it in Module 3 (Docker) in front of our frontend.
+**The most common tool:** nginx. You'll see it in [Module 3](03-docker.md) (Docker) in front of our frontend.
 
 ### Load Balancer
 
@@ -240,7 +240,7 @@ sudo ufw delete allow 8000
 
 ⚠️ **Always allow SSH (port 22) BEFORE enabling the firewall on a remote server.** Otherwise you'll lock yourself out.
 
-> **WSL note:** `ufw` may not work correctly in WSL because networking is managed by Windows. The commands above are mostly useful on a real Linux server (EC2 in Module 5). In WSL, you can read and understand them without running them.
+> **WSL note:** `ufw` may not work correctly in WSL because networking is managed by Windows. The commands above are mostly useful on a real Linux server (EC2 in [Module 5](05-aws.md)). In WSL, you can read and understand them without running them.
 
 ## Useful Networking Commands
 

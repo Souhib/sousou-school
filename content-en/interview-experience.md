@@ -190,7 +190,7 @@ LESSONS LEARNED
 3. Marketing ↔ tech communication was non-existent
 ```
 
-> **Tip:** you can use an AI (like opencode, seen in Module 0) to help you write a post-mortem. Give it the incident details (what happened, the timeline, what you did) and it will handle the formatting. It's a huge time saver — what matters is the content, not the writing.
+> **Tip:** you can use an AI (like opencode, seen in [Module 0](00-prerequisites.md)) to help you write a post-mortem. Give it the incident details (what happened, the timeline, what you did) and it will handle the formatting. It's a huge time saver — what matters is the content, not the writing.
 
 ### Runbook — The instruction manual for common incidents
 

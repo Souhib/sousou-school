@@ -1,6 +1,6 @@
 # Module 5: AWS
 
-> **Prerequisites:** Module 2 (Networking -- IP, ports, subnets), Module 3 (Docker -- to deploy the app)
+> **Prerequisites:** [Module 2](02-networking.md) (Networking -- IP, ports, subnets), [Module 3](03-docker.md) (Docker -- to deploy the app)
 
 > **In a nutshell:** You discover the cloud by building an AWS infrastructure (VPC + EC2 + IAM) and by **practising** the major services (S3, SQS, RDS, DynamoDB, Lambda...). Everything is done first **locally and for free**, on an AWS emulator -- then you deploy **once** on a real AWS account, so you've genuinely done it and can talk about it in an interview.
 
@@ -314,7 +314,7 @@ A VPC (Virtual Private Cloud) isolates your AWS resources in your own network.
 +---------------------------------------------------+
 ```
 
-> The subnet and CIDR concepts come from Module 2 (Networking). Security Groups work like the firewalls seen in Module 2 (`ufw`).
+> The subnet and CIDR concepts come from [Module 2](02-networking.md) (Networking). Security Groups work like the firewalls seen in [Module 2](02-networking.md) (`ufw`).
 
 **What to remember:**
 - The EC2 is in the **public** subnet -> it has a public IP, accessible from the Internet
@@ -456,7 +456,7 @@ awslocal ec2 terminate-instances --instance-ids $INSTANCE
 
 ## RDS -- Managed database
 
-> **You do NOT need to create an RDS for the project.** The backend uses PostgreSQL in a Docker container on the EC2 (as in Module 3). This section is here to understand what it is and when to use it in production.
+> **You do NOT need to create an RDS for the project.** The backend uses PostgreSQL in a Docker container on the EC2 (as in [Module 3](03-docker.md)). This section is here to understand what it is and when to use it in production.
 
 **The problem:** You can install PostgreSQL on an EC2 yourself. But who does the backups? Who updates the database? Who restarts it if it crashes at 3 AM? You. Alone. All the time.
 
@@ -772,7 +772,7 @@ awslocal dynamodb get-item --table-name Tasks --key '{"id":{"S":"1"}}'
 
 ### ECS -- Managed containers on AWS
 
-In Module 3, you launched your Docker containers on an EC2 with `docker compose`. It works, but **you're the one managing the server**: updates, monitoring, scaling. If your EC2 goes down, your app goes down.
+In [Module 3](03-docker.md), you launched your Docker containers on an EC2 with `docker compose`. It works, but **you're the one managing the server**: updates, monitoring, scaling. If your EC2 goes down, your app goes down.
 
 **ECS** (Elastic Container Service) = you give your Docker images to AWS, and AWS launches them, monitors them, restarts them if they crash, and scales them automatically. You no longer manage the server.
 
@@ -792,7 +792,7 @@ ECS has two modes:
 
 ### EKS -- Managed Kubernetes on AWS
 
-If you've done Module 9 (Kubernetes), you already know K8s with minikube locally. **EKS** (Elastic Kubernetes Service) = the same thing, but on AWS. AWS manages the control plane (the brain of the K8s cluster), you manage the workers (the machines running your pods).
+If you've done [Module 9](09-kubernetes.md) (Kubernetes), you already know K8s with minikube locally. **EKS** (Elastic Kubernetes Service) = the same thing, but on AWS. AWS manages the control plane (the brain of the K8s cluster), you manage the workers (the machines running your pods).
 
 | | ECS | EKS |
 |--|-----|-----|
@@ -817,7 +817,7 @@ One-off tasks         --> Lambda
 
 ### Route 53 -- AWS DNS
 
-You saw DNS in Module 2 (Networking): it's the system that translates a domain name (`myapp.com`) into an IP address (`13.38.42.100`). **Route 53** is AWS's DNS service.
+You saw DNS in [Module 2](02-networking.md) (Networking): it's the system that translates a domain name (`myapp.com`) into an IP address (`13.38.42.100`). **Route 53** is AWS's DNS service.
 
 Without Route 53, your users have to type `http://13.38.42.100` to access your app. With Route 53, they type `myapp.com`.
 
@@ -871,7 +871,7 @@ awslocal route53 list-resource-record-sets --hosted-zone-id $ZONE \
 
 ### CloudWatch -- AWS built-in monitoring
 
-In Module 8, you'll see Prometheus + Grafana for monitoring. **CloudWatch** is the AWS-native equivalent -- it's already enabled by default on all your AWS services, without installing anything.
+In [Module 8](08-monitoring.md), you'll see Prometheus + Grafana for monitoring. **CloudWatch** is the AWS-native equivalent -- it's already enabled by default on all your AWS services, without installing anything.
 
 **What CloudWatch does:**
 - **Metrics**: CPU, RAM, network of your EC2s, number of requests on your Load Balancer, Lambda errors... everything is collected automatically
@@ -922,7 +922,7 @@ That's the "logs" pillar of observability, which you'll meet again in [Module 8]
 
 > **Prerequisite:** [Module 4 (CI/CD)](04-cicd.md). This section builds on the pipeline you created there.
 
-In Module 4 you added an `integration-test` job that starts a real PostgreSQL for the duration of the tests. You left a third job aside, `aws-test`, until you knew what AWS was. Now you do.
+In [Module 4](04-cicd.md) you added an `integration-test` job that starts a real PostgreSQL for the duration of the tests. You left a third job aside, `aws-test`, until you knew what AWS was. Now you do.
 
 ### The problem
 
@@ -934,7 +934,7 @@ Your application has code that talks to S3 and SQS (`backend/aws_client.py`). Ho
 | "We'll mock AWS" | You then test your own imitation of AWS, not AWS. A typo in a parameter name slips straight through |
 | "We won't test that code" | The default choice of many teams… and the cause of many incidents |
 
-**The right answer: the same emulator you've been using all through this module, but in CI.** Exactly like PostgreSQL in Module 4 — a service container, started for the job, thrown away afterwards.
+**The right answer: the same emulator you've been using all through this module, but in CI.** Exactly like PostgreSQL in [Module 4](04-cicd.md) — a service container, started for the job, thrown away afterwards.
 
 ### The job
 
@@ -975,7 +975,7 @@ The project's `.github/workflows/ci.yml` already contains it:
 
 ### The three things to remember
 
-**1. No AWS secret is needed.** Writing `AWS_ACCESS_KEY_ID: test` in plain text is harmless: they're dummy credentials for a local emulator. Compare with Module 4's `push` job, which does need real Docker Hub secrets via `${{ secrets.* }}`. **The best way to protect a secret is not to need one.**
+**1. No AWS secret is needed.** Writing `AWS_ACCESS_KEY_ID: test` in plain text is harmless: they're dummy credentials for a local emulator. Compare with [Module 4](04-cicd.md)'s `push` job, which does need real Docker Hub secrets via `${{ secrets.* }}`. **The best way to protect a secret is not to need one.**
 
 **2. Here we use `AWS_ENDPOINT_URL`, not the `awslocal` alias.** On your machine you type `awslocal` because your AWS CLI may be old. In CI it isn't the AWS CLI talking to AWS, it's **boto3** (the Python library) — and `aws_client.py` reads that variable itself. The code isn't modified for the tests: it's simply **configured** differently.
 
@@ -1131,9 +1131,9 @@ git clone https://github.com/YOUR_USER/devops-project.git .
 docker compose up -d --build
 ```
 
-With that, you launch the EC2 and the app runs on its own in 2-3 minutes -- without connecting via SSH. This is exactly what we'll automate with Terraform in Module 6.
+With that, you launch the EC2 and the app runs on its own in 2-3 minutes -- without connecting via SSH. This is exactly what we'll automate with Terraform in [Module 6](06-terraform.md).
 
-> **You don't have to redo the exercise with User Data.** It's just to understand the concept. Module 6 (Terraform) uses it automatically.
+> **You don't have to redo the exercise with User Data.** It's just to understand the concept. [Module 6](06-terraform.md) (Terraform) uses it automatically.
 
 ## Interview Corner
 
