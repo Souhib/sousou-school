@@ -135,7 +135,27 @@ bunx oxlint .
 ```bash
 cd ~/devops-project/backend
 uv run pytest
-# ===== 7 passed in 0.5s =====
+# ===== 7 passed, 4 deselected in 0.5s =====
+```
+
+**What does "4 deselected" mean?** The project contains two families of tests, and `pytest` only runs one of them by default.
+
+| | **Unit** tests (`test_main.py`) | **Integration** tests (`test_integration.py`) |
+|---|---|---|
+| They test | Your code on its own | Your code **together with** the services it talks to |
+| They need | Nothing | A database, an AWS emulator... |
+| Duration | Milliseconds | Seconds |
+| When | On every save, continuously | On every push, in CI |
+
+**Why both?** A unit test will never catch that you used the wrong parameter name in an S3 call — it never makes the call. An integration test will.
+
+Integration tests carry a **marker** (`@pytest.mark.integration`), and `pyproject.toml` asks pytest to skip them by default. That's deliberate: **fast tests must be runnable with nothing installed**, otherwise developers stop running them.
+
+```bash
+# Run them explicitly (Floci must be running — see Module 5)
+cd ~/devops-project/floci && docker compose up -d && cd ../backend
+AWS_ENDPOINT_URL=http://localhost:4566 uv run pytest -m integration
+# ===== 4 passed, 7 deselected =====
 ```
 
 ### 3. The GitHub Actions pipeline
@@ -256,13 +276,114 @@ jobs:
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/devops-frontend:latest
 ```
 
-### 4. Configure the secrets
+### 4. Running integration tests in CI
+
+The pipeline above has a blind spot: the `test` job only runs unit tests. All the code that talks to **PostgreSQL** and to **AWS** is never executed.
+
+#### The problem to solve
+
+To test that code you need a database and AWS. But a GitHub runner has neither. The three classic wrong answers:
+
+| Bad idea | Why it's bad |
+|---|---|
+| "We'll use a real AWS test account" | You'd have to put real AWS keys in GitHub, it costs money, and two pipelines running at once collide |
+| "We'll mock everything" | You then test your own imitation of AWS, not AWS. A typo in a parameter name slips straight through |
+| "We won't test that code" | That's the default choice of many teams… and the cause of many incidents |
+
+**The right answer: start the real services next to the test, for the duration of the test.** GitHub Actions calls these **service containers**.
+
+#### Service containers
+
+A service container is a container GitHub starts **before** your steps, that runs alongside them, and that it stops afterwards. Your tests reach it on `localhost`. It's the equivalent of a `docker compose up` managed by GitHub.
+
+Add this job to your `.github/workflows/ci.yml`:
+
+```yaml
+  integration-test:
+    name: Integration Test
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      # A real PostgreSQL database, for the duration of the job
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: pass
+          POSTGRES_DB: tasks
+        ports:
+          - 5432:5432
+        # Without health-cmd, the tests would start BEFORE PostgreSQL is
+        # ready to answer, and fail for the wrong reason.
+        options: >-
+          --health-cmd "pg_isready -U user -d tasks"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+      # The AWS emulator — the same one as in Module 5
+      floci:
+        image: floci/floci:1.7.0
+        ports:
+          - 4566:4566
+        options: >-
+          --health-cmd "curl -f http://localhost:4566/health"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      # The SAME tests as the `test` job, but against a real database.
+      # The application code doesn't change: only DATABASE_URL appears.
+      - name: Tests against a real PostgreSQL
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/tasks
+        run: |
+          cd backend
+          uv run pytest
+
+      - name: AWS integration tests
+        env:
+          AWS_ENDPOINT_URL: http://localhost:4566
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: test        # dummy: no real AWS secret needed
+          AWS_SECRET_ACCESS_KEY: test
+        run: |
+          cd backend
+          uv run pytest -m integration
+```
+
+And change the `build` job's dependency so it waits for both:
+
+```yaml
+  build:
+    needs: [test, integration-test]
+```
+
+#### What this job actually teaches you
+
+**1. `--health-cmd` isn't decoration.** "The container is started" ≠ "the service answers". PostgreSQL takes one to three seconds to boot. Without a health check, your tests start too early and fail one time in three — the worst kind of test, the one that fails at random (a *flaky* test). It's a very common source of CI incidents.
+
+**2. No AWS secret is needed.** `AWS_ACCESS_KEY_ID: test` written in plain text is harmless: they're dummy credentials for a local emulator. Compare with the `push` job below, which does need real Docker Hub secrets.
+
+**3. The same code, two configurations.** The `test` job runs the tests in memory; `integration-test` runs **exactly the same ones** against PostgreSQL. The application code doesn't differ by one line — only the `DATABASE_URL` variable appears. That's what proves a codebase is properly configurable.
+
+**4. Both jobs run in parallel.** `test` and `integration-test` both depend on `lint`, but not on each other: GitHub runs them at the same time. A pipeline isn't necessarily a straight line — anything independent should run simultaneously.
+
+> **In interviews**, the question *"how do you test code that talks to AWS?"* comes up often. The full answer has three parts: unit tests for the logic, an **emulator** (Floci, LocalStack, Testcontainers) for integration in CI, and a final validation on a real environment before production.
+
+### 5. Configure the secrets
 
 On GitHub -> your repo -> **Settings** -> **Secrets and variables** -> **Actions** -> **New repository secret**:
 - `DOCKERHUB_USERNAME`: your Docker Hub username
 - `DOCKERHUB_TOKEN`: an access token (not your password!) created at [hub.docker.com/settings/security](https://hub.docker.com/settings/security)
 
-### 5. Push and watch
+### 6. Push and watch
 
 The `ci.yml` file is already in the project. If you've pushed everything, the pipeline runs automatically.
 
@@ -355,3 +476,6 @@ A: You deploy the new version to a small percentage of servers (e.g., 5%). You m
 - [ ] The GitHub Actions pipeline runs on your repo (Actions tab)
 - [ ] You know how to configure secrets in GitHub (Settings -> Secrets)
 - [ ] You know what a runner is
+- [ ] You know the difference between a unit test and an integration test
+- [ ] You know what a service container is, and why `--health-cmd` is essential
+- [ ] You can answer "how do you test code that talks to AWS?"

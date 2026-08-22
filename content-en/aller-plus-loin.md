@@ -23,6 +23,7 @@ Security comes up in almost every DevOps interview. You don't need to be an expe
 |------|-----------|-----------------|
 | **HashiCorp Vault** | Centralized secrets management (passwords, tokens, API keys) | In companies, secrets aren't in `.env` files or GitHub Secrets — they're in Vault. It's the standard |
 | **Trivy / Snyk** | Vulnerability scanners — they analyze your Docker images and dependencies to find security flaws | Increasingly in demand, integrates into the CI/CD pipeline |
+| **Testcontainers** | Automatically starts the containers your tests need, from the test code itself | The logical next step after what you did in Module 4 with service containers. Available for Java, Python, Go, Node... |
 | **Datadog / New Relic** | SaaS monitoring (all-in-one, paid) — metrics, logs, traces in a single interface | Many companies use these instead of Prometheus + Grafana. The concept is the same, only the tool changes |
 | **Loki** | Log collector by Grafana — like ELK but simpler | Complements Prometheus (metrics) with centralized logs |
 
@@ -48,6 +49,7 @@ In the workplace, you'll come across tools different from those in the course. D
 | **AWS** (cloud) | GCP (Google), Azure (Microsoft) | The service names change (EC2 → Compute Engine, S3 → Cloud Storage, RDS → Cloud SQL). The concepts are the same |
 | **Terraform** (IaC) | OpenTofu (open-source fork), Pulumi (IaC in Python/TS), CloudFormation (AWS-specific IaC) | Terraform and OpenTofu are nearly identical. Pulumi uses a real programming language instead of HCL. CloudFormation = same idea but locked to AWS |
 | **Docker Compose** (local orchestration) | Podman Compose, Docker Swarm | Podman = Docker without a daemon (more secure). Swarm = basic orchestration built into Docker |
+| **Floci** (local AWS emulator) | LocalStack, Testcontainers, moto | LocalStack was the reference until 2026, the year its free edition was discontinued — Floci is its open-source replacement, with the same port and conventions. Testcontainers starts services from the test code itself. `moto` does the same, but for Python only |
 | **Prometheus + Grafana** (monitoring) | Datadog, New Relic, CloudWatch | Same concept (metrics + dashboards + alerts), but paid SaaS. Easier to set up, less control |
 | **Ansible** (configuration) | Chef, Puppet, SaltStack | Ansible = agentless (SSH). Chef/Puppet = agent installed on each server. Same goal: configure servers automatically |
 | **GitHub** (code hosting) | GitLab, Bitbucket | Git is the same everywhere. Only the web interface and built-in features change (CI/CD, issues, etc.) |

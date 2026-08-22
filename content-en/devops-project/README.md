@@ -29,13 +29,21 @@ A simple application (React frontend + FastAPI backend) used throughout the DevO
 
 ```
 .github/workflows/
-  ci.yml              → CI/CD Pipeline (lint → test → build → push)
-frontend/             → Vite + React (managed by Bun)
-  Dockerfile          → Multi-stage build (Bun → nginx)
-  nginx.conf          → Reverse proxy to the backend
-backend/              → Python FastAPI (managed by uv)
-  Dockerfile          → Python image with uv
-docker-compose.yml    → Backend + Frontend + PostgreSQL
+  ci.yml                    → CI/CD Pipeline (lint → test/integration → build → push)
+frontend/                   → Vite + React (managed by Bun)
+  Dockerfile                → Multi-stage build (Bun → nginx)
+  nginx.conf                → Reverse proxy to the backend
+backend/                    → Python FastAPI (managed by uv)
+  Dockerfile                → Python image with uv
+  main.py                   → The API (routes + storage)
+  aws_client.py             → The code that talks to AWS (S3, SQS)
+  test_main.py              → Unit tests
+  test_integration.py       → Integration tests (require Floci)
+floci/                      → Local AWS (emulator, see below)
+  docker-compose.yml        → Starts Floci
+  init/ready.d/             → Scripts run when Floci starts
+docker-compose.yml          → Backend + Frontend + PostgreSQL
+docker-compose.floci.yml    → Override: connects the backend to local AWS
 ```
 
 ## Run locally (without Docker)
@@ -67,6 +75,31 @@ docker compose up -d --build
 # PostgreSQL: port 5432 (only accessible from the backend)
 ```
 
+## Run local AWS (Floci)
+
+**Floci** is an AWS emulator: it imitates AWS on your machine. No account, no credit
+card, no bill. It's what lets you practise S3, SQS, DynamoDB, Lambda, RDS, EC2 and
+Terraform without paying anything.
+
+```bash
+cd floci
+docker compose up -d
+
+# Check it's ready (should print 200)
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:4566/health
+
+# Every AWS command targets the emulator with --endpoint-url
+aws --endpoint-url http://localhost:4566 s3 ls
+```
+
+To connect the application to it:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.floci.yml up -d --build
+```
+
+Full guide: [AWS Locally](../floci-aws-local.md).
+
 ## API Endpoints
 
 | Method | URL | Description |
@@ -89,7 +122,31 @@ cd frontend && bunx oxlint .
 
 ## Tests
 
+There are two families of tests, and they aren't launched the same way.
+
+**Unit tests** — fast, no dependencies:
+
 ```bash
 cd backend && uv run pytest
 # 7 tests: GET, POST, PATCH, PATCH 404, DELETE, DELETE 404, health
+```
+
+**Integration tests** — they really talk to S3 and SQS, so Floci is required:
+
+```bash
+cd floci && docker compose up -d && cd ../backend
+
+AWS_ENDPOINT_URL=http://localhost:4566 uv run pytest -m integration
+# 4 tests: S3 upload/read, missing file, SQS message, endpoint guard
+```
+
+By default, `uv run pytest` **skips** the integration tests (configured in
+`pyproject.toml`). That's deliberate: fast tests must be runnable with nothing
+installed.
+
+**The same unit tests against a real PostgreSQL** — the code doesn't change, only
+the environment variable appears:
+
+```bash
+DATABASE_URL=postgresql://user:pass@localhost:5432/tasks uv run pytest
 ```

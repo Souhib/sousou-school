@@ -275,6 +275,103 @@ denied: requested access to the resource is denied
 
 ---
 
+## AWS locally (Floci)
+
+> Full guide: [AWS Locally](floci-aws-local.md)
+
+### `InvalidAccessKeyId ... does not exist in our records`
+
+**Your command went to REAL AWS**, not to the emulator. This is the most common and most confusing error: it comes from AWS, not from Floci — which was never contacted.
+
+**Why:**
+- you typed `aws` instead of `awslocal`;
+- or you relied on the `AWS_ENDPOINT_URL` variable, which is only understood by AWS CLI **2.13 and later**. On an older version it is **silently ignored**.
+
+**How to check and fix:**
+
+```bash
+aws --version              # if < 2.13, AWS_ENDPOINT_URL won't work
+alias awslocal             # should print the alias definition
+source ~/.bashrc           # if the alias doesn't exist
+```
+
+**The rule:** locally, always type `awslocal`. Never `aws`.
+
+### `Could not connect to the endpoint URL: "http://localhost:4566/"`
+
+Floci isn't running, or isn't ready yet.
+
+```bash
+cd ~/devops-project/floci
+docker compose ps          # STATUS should show "Up (healthy)"
+docker compose up -d
+docker compose logs floci  # to see what's blocking
+```
+
+If STATUS shows `Up (health: starting)`, just wait 10 to 20 seconds.
+
+### `Unable to locate credentials`
+
+The AWS CLI refuses to send anything without credentials, even fake ones.
+
+```bash
+echo $AWS_ACCESS_KEY_ID   # should print "test"
+source ~/.bashrc          # if it's empty
+```
+
+### `Bind for 0.0.0.0:4566 failed: port is already allocated`
+
+Another program is using port 4566 — most often an old Floci still running.
+
+```bash
+docker ps | grep 4566
+cd ~/devops-project/floci && docker compose down
+```
+
+### An EC2 instance goes to `terminated` immediately
+
+Floci can't reach Docker, so it can't create the container that backs the instance.
+
+```bash
+docker compose logs floci | grep -iE "BindException|Failed to launch"
+```
+
+If you see `java.net.BindException: Permission denied`, the `dockerproxy` service didn't start:
+
+```bash
+docker compose ps      # BOTH services must be running
+docker compose up -d
+```
+
+### SSH to an EC2 instance: `Connection closed by ...`
+
+In order:
+
+1. **The instance hasn't finished booting.** The Ubuntu image has no SSH server: Floci installs it at launch, which takes a good minute. `running` ≠ "ready". Wait and retry.
+2. **You're using the wrong user.** Locally it's **`root`**, not `ubuntu` (unlike real AWS).
+3. **The SSH server couldn't start** because a directory is missing. Check that you passed the `--user-data` containing `mkdir -p /run/sshd` (see [Module 5](05-aws.md)).
+4. **You used `create-key-pair`.** The private key it returns is a dummy. Generate your key with `ssh-keygen` and use `import-key-pair`.
+
+### I can't connect to my local RDS database
+
+The address returned by `describe-db-instances` (`172.x.x.x`) is **Docker-internal** and means nothing from your machine. Keep the **port**, and replace the address with `localhost`:
+
+```bash
+awslocal rds describe-db-instances --db-instance-identifier my-database \
+  --query 'DBInstances[0].Endpoint' --output table
+# Address: 172.25.0.3   Port: 7001   ← keep the port, ignore the address
+
+psql -h localhost -p 7001 -U postgres
+```
+
+### An IAM policy doesn't block anything
+
+**That's expected.** The emulator creates users and policies but **enforces no permissions**: it accepts any credentials. You'll only see real `AccessDenied` errors on a real AWS account. It's the most important limitation to know.
+
+### `docker run` doesn't work inside an emulated EC2 instance
+
+**This is a known limitation, not your mistake.** The emulated instance is itself a container; you can install Docker in it, but you can't launch containers from it. That's why the project's final deployment is done on real AWS.
+
 ## SSH and AWS
 
 ### `Connection refused` vs `Connection timed out`

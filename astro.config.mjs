@@ -100,6 +100,7 @@ export default defineConfig({
 					label: 'Références',
 					translations: { en: 'References' },
 					items: [
+						{ slug: 'references/aws-local', label: 'AWS en local', translations: { en: 'AWS Locally' } },
 						{ slug: 'references/cheatsheet', label: 'Cheatsheet', translations: { en: 'Cheatsheet' } },
 						{ slug: 'references/troubleshooting', label: 'Troubleshooting', translations: { en: 'Troubleshooting' } },
 						{ slug: 'references/aller-plus-loin', label: 'Aller plus loin', translations: { en: 'Going Further' } },

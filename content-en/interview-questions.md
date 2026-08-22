@@ -233,6 +233,22 @@ For each technology, the questions you'll be asked in interviews.
 <details><summary>💡 Hint</summary>Instead of deploying to everyone at once, you start with a small percentage. The name comes from canaries in coal mines.</details>
 <details><summary>✅ Answer</summary>You deploy the new version to a small percentage of servers (e.g., 5%). You monitor the metrics. If everything's fine, you gradually increase (25% → 50% → 100%). If it breaks, only 5% of users are impacted.</details>
 
+**Q: How do you test code that talks to AWS?**
+<details><summary>💡 Hint</summary>Three levels: the logic alone, integration against a fake AWS, then validation on a real environment.</details>
+<details><summary>✅ Answer</summary>On three levels. <b>1) Unit tests</b>: the business logic, without calling AWS — fast, they run continuously. <b>2) Integration tests against an emulator</b> (Floci, LocalStack, Testcontainers, or <code>moto</code> in Python): you run a fake AWS in CI and the code makes real API calls. That catches parameter mistakes a mock would never see, with no cost and no AWS secrets in the pipeline. <b>3) Validation on a real staging environment</b> before production, because an emulator enforces neither IAM permissions nor quotas.</details>
+
+**Q: Why not just use a real AWS test account for CI?**
+<details><summary>💡 Hint</summary>Think about cost, secrets, and what happens when two pipelines run at once.</details>
+<details><summary>✅ Answer</summary>Four reasons. <b>Cost</b>: every run creates real resources. <b>Security</b>: you must store real AWS keys in the CI, which become a target. <b>Isolation</b>: two pipelines running in parallel collide (same bucket name, same table). <b>Speed</b>: creating a real RDS takes minutes, an emulator takes seconds. You keep the real account for a staging environment, not for every commit.</details>
+
+**Q: What is a service container in GitHub Actions?**
+<details><summary>💡 Hint</summary>A container GitHub starts alongside your steps, for the duration of the job.</details>
+<details><summary>✅ Answer</summary>A container started by GitHub before the job's steps and stopped afterwards, reachable on <code>localhost</code>. It's used to give tests a real database, a Redis, or an AWS emulator. Crucially, you must define a <b>health check</b> (<code>--health-cmd</code>), otherwise the tests start before the service answers and fail at random — what's called a <i>flaky</i> test.</details>
+
+**Q: What is a flaky test, and why does it matter?**
+<details><summary>💡 Hint</summary>A test that doesn't always give the same result on the same code.</details>
+<details><summary>✅ Answer</summary>A test that passes or fails randomly without the code changing. Classic causes: a dependency that isn't ready yet (no health check), tests sharing data, or a dependency on execution order. It matters because the team gets used to re-running the pipeline without looking — and the day the test fails for a real reason, nobody notices.</details>
+
 ## AWS
 
 ### EC2
@@ -248,6 +264,20 @@ For each technology, the questions you'll be asked in interviews.
 **Q: Your EC2 is unresponsive — what are the first things you check?**
 <details><summary>💡 Hint</summary>3 things: the instance itself (is it running?), the network (is the port open?), and the address (does it have a public IP?).</details>
 <details><summary>✅ Answer</summary>1. Is the instance "Running" in the AWS console? 2. Does the Security Group allow SSH (22) and HTTP (80) ports? 3. Does the instance have a public IP? 4. If everything looks fine on the AWS side, SSH in and check the app logs.</details>
+
+### Practising and testing AWS
+
+**Q: What is an AWS emulator, and when do you use one?**
+<details><summary>💡 Hint</summary>A local program that answers like AWS, with no account and no bill.</details>
+<details><summary>✅ Answer</summary>Software that runs on your machine and implements the same APIs as AWS. Your SDK, the AWS CLI and Terraform talk to it unmodified — you only change the <i>endpoint</i>. It's used for local development and for integration tests in CI: no account, no cost, no secrets, and a fresh environment on every run. Common tools: Floci (the open-source successor to LocalStack, whose free edition was discontinued in 2026), Testcontainers, and <code>moto</code> for Python.</details>
+
+**Q: What are the limits of an AWS emulator?**
+<details><summary>💡 Hint</summary>It imitates the APIs, not everything else.</details>
+<details><summary>✅ Answer</summary>Mainly: <b>IAM permissions are not enforced</b> (it accepts any credentials, so you never actually test your policies), <b>no billing and no quotas</b>, <b>no real network latency</b>, and <b>partial coverage</b> that varies by service. That's why an emulator doesn't replace a real staging environment: it validates that you call the APIs correctly, not that it will work in production.</details>
+
+**Q: What is the address 169.254.169.254 for?**
+<details><summary>💡 Hint</summary>A special address, reachable only from inside an EC2 instance.</details>
+<details><summary>✅ Answer</summary>It's the IMDS (Instance Metadata Service): the service every EC2 instance queries to learn about itself (its id, region, type). Its most important use is supplying <b>the temporary credentials of the IAM role attached to the instance</b>. That's what lets an application read an S3 bucket without any key written in the code or on disk — the right answer to "how do you handle AWS secrets on a server?".</details>
 
 ### VPC and Networking
 
@@ -410,6 +440,10 @@ For each technology, the questions you'll be asked in interviews.
 **Q: What is a Terraform provider?**
 <details><summary>💡 Hint</summary>Terraform alone can't do anything. It needs plugins to talk to AWS, GCP, etc.</details>
 <details><summary>✅ Answer</summary>A plugin that connects Terraform to a service (AWS, GCP, Azure, GitHub...). The AWS provider allows Terraform to create EC2s, S3 buckets, RDS instances. Without a provider, Terraform can't talk to anything.</details>
+
+**Q: How do you test Terraform code before applying it in production?**
+<details><summary>💡 Hint</summary>Several safety nets, from cheapest to most expensive.</details>
+<details><summary>✅ Answer</summary>In order: <b>1)</b> <code>terraform fmt</code> and <code>terraform validate</code> for syntax; <b>2)</b> <code>terraform plan</code>, which you actually <b>read</b> — that's the main safety net, and it should be posted automatically on the pull request; <b>3)</b> an <code>apply</code> against a local AWS emulator or an ephemeral dev environment, to check it really creates; <b>4)</b> static analysis tools like <code>tfsec</code> or <code>checkov</code> for security flaws (public bucket, port open to 0.0.0.0/0); <b>5)</b> an apply on staging before production. The non-negotiable point: <b>never apply a plan you haven't read</b>.</details>
 
 ## Ansible
 

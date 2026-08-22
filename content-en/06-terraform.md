@@ -34,6 +34,93 @@ terraform --version
 # Terraform v1.x.x
 ```
 
+## Where we'll apply: locally first
+
+Terraform is learned by **repeating**. You write three lines, you apply, you look at the result, you fix it, you start again. Twenty times.
+
+On a real AWS account that isn't comfortable: every `apply` creates real resources, every `destroy` removes them, and if you forget something, you pay for it.
+
+So we'll apply against the **local AWS** from [Module 5](05-aws.md). Same Terraform, same commands, same files -- but free, instant, and consequence-free.
+
+```bash
+cd ~/devops-project/floci && docker compose up -d && cd -
+```
+
+### How to point Terraform at the local one
+
+A **provider** is the module that knows how to talk to a service (AWS, GCP, GitHub...). By default the AWS provider sends everything to real AWS. We give it four pieces of information to redirect it:
+
+```hcl
+provider "aws" {
+  region     = "us-east-1"
+  access_key = "test"        # dummy credentials: the emulator doesn't check them
+  secret_key = "test"
+
+  # ─── The 4 "skips": disable the checks that make no sense locally ───
+  skip_credentials_validation = true   # don't ask AWS whether these keys are valid
+  skip_metadata_api_check     = true   # don't try to detect whether we run on EC2
+  skip_requesting_account_id  = true   # don't ask for the AWS account number
+  s3_use_path_style           = true   # URLs like .../my-bucket instead of my-bucket....
+
+  # ─── Where to send each service's requests ───
+  endpoints {
+    ec2 = "http://localhost:4566"
+    s3  = "http://localhost:4566"
+    iam = "http://localhost:4566"
+  }
+}
+```
+
+**Without the `skip`s it doesn't work**: Terraform would start by calling real AWS to validate your credentials, and fail before creating anything at all.
+
+**`s3_use_path_style` deserves an explanation.** Real AWS puts the bucket name in the domain name (`my-bucket.s3.amazonaws.com`). Locally there's no DNS for that, so we ask for the other form: `localhost:4566/my-bucket`. Forget this line and S3 fails with baffling DNS resolution errors.
+
+### The same code for local AND production
+
+We obviously don't want two different Terraform files. So we put the address in a **variable**:
+
+```hcl
+variable "aws_endpoint" {
+  description = "AWS API address. Empty = real AWS."
+  type        = string
+  default     = ""
+}
+
+provider "aws" {
+  region = var.aws_region
+
+  # These settings only kick in when a local address is provided.
+  skip_credentials_validation = var.aws_endpoint != ""
+  skip_metadata_api_check     = var.aws_endpoint != ""
+  skip_requesting_account_id  = var.aws_endpoint != ""
+  s3_use_path_style           = var.aws_endpoint != ""
+  access_key                  = var.aws_endpoint != "" ? "test" : null
+  secret_key                  = var.aws_endpoint != "" ? "test" : null
+
+  # dynamic = only generate this block IF the condition holds
+  dynamic "endpoints" {
+    for_each = var.aws_endpoint != "" ? [1] : []
+    content {
+      ec2 = var.aws_endpoint
+      s3  = var.aws_endpoint
+      iam = var.aws_endpoint
+    }
+  }
+}
+```
+
+```bash
+# Locally
+terraform apply -var="aws_endpoint=http://localhost:4566"
+
+# On real AWS: pass nothing, the variable stays empty
+terraform apply
+```
+
+> **`condition ? value_if_true : value_if_false`** is called a ternary operator -- an `if/else` written on one line. You'll find it in almost every language.
+
+**What you've just seen is the heart of the job.** One infrastructure codebase, several environments, and **only the configuration changes**. It's exactly the dev / staging / prod principle from [Module 1](01-linux-basics.md), applied to infrastructure. In a company, that's how a single codebase is driven by a `dev.tfvars`, a `staging.tfvars` and a `prod.tfvars`.
+
 ## IaC -- Before vs After
 
 | | Before (clicks) | After (Terraform) |
@@ -137,6 +224,71 @@ terraform destroy
 # Destroy complete! Resources: 3 destroyed.
 ```
 
+### 🧪 Practice: the loop that makes you improve
+
+This is the highest-return exercise in the module. It doesn't teach you a command -- it teaches you a **reflex**.
+
+Create a sandbox folder:
+
+```bash
+mkdir -p ~/tf-sandbox && cd ~/tf-sandbox
+
+cat > main.tf <<'EOF'
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region     = "us-east-1"
+  access_key = "test"
+  secret_key = "test"
+
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
+  skip_requesting_account_id  = true
+  s3_use_path_style           = true
+
+  endpoints {
+    ec2 = "http://localhost:4566"
+    s3  = "http://localhost:4566"
+  }
+}
+
+resource "aws_vpc" "test" {
+  cidr_block = "10.0.0.0/16"
+  tags = { Name = "my-vpc" }
+}
+EOF
+
+terraform init
+terraform apply -auto-approve
+```
+
+Now **run these experiments one by one**, and each time read what `terraform plan` says **before** applying:
+
+| Experiment | What you should observe |
+|---|---|
+| Run `terraform apply` again with no changes | `No changes.` -- Terraform doesn't redo what already exists |
+| Change the `tags = { Name = ... }` | `1 to change` -- modified **in place**, the VPC id stays the same |
+| Change `cidr_block` to `10.1.0.0/16` | `1 to add, 1 to destroy` -- Terraform **destroys and recreates**: some attributes can't be modified |
+| Add an `aws_subnet` referencing the VPC | `1 to add` -- and Terraform creates it **after** the VPC, on its own |
+| Remove the resource from the file | `1 to destroy` -- the code is the truth: what's no longer in it gets deleted |
+| Delete the resource **by hand** (`awslocal ec2 delete-vpc ...`) then `plan` | `1 to add` -- Terraform notices reality no longer matches the code. That's called **drift** |
+
+> **The "modify in place" vs "destroy and recreate" distinction is an interview classic.** In production, a `plan` announcing an unexpected `destroy` on a database is a disaster narrowly avoided. **Always read the `plan` before applying** -- that's THE professional reflex.
+
+```bash
+# Clean up when you're done
+terraform destroy -auto-approve
+```
+
+Run this loop as often as you like: it costs nothing and takes two seconds each time. That's exactly what local AWS makes possible.
+
 ## The State File
 
 The `terraform.tfstate` file records the current state of your infrastructure -- it's Terraform's memory. It knows "I created a server with ID i-abc123, a VPC with ID vpc-def456, etc.". When you rerun `terraform apply`, it compares this file with your code to know what to create, modify, or delete.
@@ -145,6 +297,79 @@ The `terraform.tfstate` file records the current state of your infrastructure --
 ⚠️ **NEVER commit the state file to Git** (it can contain secrets).
 
 In a team, you store the state on a remote backend (S3 for example) so everyone works on the same state.
+
+### 🧪 Practice: putting the state on S3
+
+So far the state is a file on your machine. That causes three problems as soon as there's more than one of you:
+
+1. **Your colleague can't see your state.** They think nothing exists and recreate everything twice.
+2. **If you lose your disk, you lose the state.** Terraform no longer knows what it created — the resources still exist on AWS, but it doesn't recognise them.
+3. **Two `apply`s at the same time** can collide and corrupt the state.
+
+The fix: store the state in a **remote backend**, usually an S3 bucket. Let's do it for real, locally.
+
+```bash
+# The bucket already exists (created when Floci starts), otherwise:
+awslocal s3 mb s3://taskflow-tfstate
+```
+
+Add a `backend` block inside `terraform`:
+
+```hcl
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+
+  backend "s3" {
+    bucket = "taskflow-tfstate"              # which bucket
+    key    = "formation/terraform.tfstate"   # which path inside it
+    region = "us-east-1"
+
+    # ─── Local AWS only ───
+    endpoints = {
+      s3 = "http://localhost:4566"
+    }
+    access_key                  = "test"
+    secret_key                  = "test"
+    skip_credentials_validation = true
+    skip_metadata_api_check     = true
+    skip_requesting_account_id  = true
+    skip_region_validation      = true
+    skip_s3_checksum            = true
+    use_path_style              = true
+  }
+}
+```
+
+> ⚠️ **The `backend` block doesn't accept variables.** Unlike the rest of your Terraform code, you can't write `var.something` in it: it's read very early, before variables exist. In a company you therefore pass those values separately: `terraform init -backend-config=dev.hcl`.
+>
+> The `endpoints` field in a backend requires **Terraform 1.6 or later** (`terraform --version` to check).
+
+```bash
+# Re-initialise: Terraform detects the new backend
+terraform init
+# Do you want to copy existing state to the new backend? → yes
+
+terraform apply
+```
+
+**Check that it worked:**
+
+```bash
+# The state now lives in the bucket
+awslocal s3 ls s3://taskflow-tfstate/formation/
+# 2026-08-22 14:54:37       1617 terraform.tfstate
+
+# And there's no local file any more
+ls terraform.tfstate
+# ls: cannot access 'terraform.tfstate': No such file or directory
+```
+
+**What you just did is exactly what happens in a company.** The state lives in a shared bucket, every team member works against the same state, and the bucket has versioning enabled so you can roll back. When a recruiter asks *"where do you store your Terraform state?"*, the expected answer is: "in a remote backend, S3 with versioning enabled, never in Git".
 
 ## Modules (concept)
 
@@ -155,6 +380,10 @@ We won't create one in this course, but know that they exist.
 ## Hands-on Project: Recreate the AWS infrastructure with Terraform
 
 We'll recreate exactly what we did by hand in Module 5, but in code.
+
+> **Do it locally first.** Write all the code, run `terraform apply` against local AWS, fix your syntax and dependency mistakes — for free. Once it passes cleanly, do it again on real AWS by simply dropping the `-var="aws_endpoint=..."`.
+>
+> One caveat: the emulator doesn't validate everything. An `apply` that passes locally **can** still fail on real AWS (IAM permissions, quotas, bucket names already taken worldwide). Local removes 90% of the errors — not 100%.
 
 ### 1. Create the structure
 
@@ -412,6 +641,21 @@ terraform destroy
 # Destroy complete! Resources: 6 destroyed.
 ```
 
+### 8. Bonus -- The same code on both
+
+If you followed the [The same code for local AND production](#the-same-code-for-local-and-production) section, you can now do this:
+
+```bash
+# Create the infra locally, test it, destroy it -- in 10 seconds
+terraform apply  -var="aws_endpoint=http://localhost:4566" -auto-approve
+terraform destroy -var="aws_endpoint=http://localhost:4566" -auto-approve
+
+# Then the real one, once you're confident
+terraform apply
+```
+
+**One codebase, two environments.** That's the concrete outcome of this whole module.
+
 ## Interview Corner
 
 **Q: What is Terraform?**
@@ -466,9 +710,11 @@ A: A plugin that connects Terraform to a service (AWS, GCP, Azure, GitHub...). T
 
 ## You can move on to the next module if...
 
-- [ ] You can explain Infrastructure as Code in one sentence
+- [ ] You can explain what Infrastructure as Code is, and what it brings
 - [ ] You know the 4 commands: `init`, `plan`, `apply`, `destroy`
-- [ ] You can write a basic HCL resource (provider, resource, variable, output)
-- [ ] You understand the role of the state file (and why not to commit it)
-- [ ] You've recreated the Module 5 AWS infrastructure with `terraform apply`
-- [ ] You've cleaned up with `terraform destroy`
+- [ ] You know what the state is, and why you never commit it to Git
+- [ ] You've run the apply/plan/destroy loop locally, and can explain the difference between "modify in place" and "destroy and recreate"
+- [ ] You've put your state on an S3 backend and verified there's no local file left
+- [ ] You know how to point the AWS provider at a local endpoint, and why the `skip_*` flags are needed
+- [ ] You've recreated the Module 5 infrastructure in Terraform
+- [ ] You've run `terraform destroy` on real AWS to avoid costs

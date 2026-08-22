@@ -161,6 +161,43 @@ jobs:
 | `aws lambda invoke --function-name <NAME> output.json` | Invoke a Lambda | *rarely* |
 | `aws lambda delete-function --function-name <NAME>` | Delete a Lambda | *rarely* |
 
+## AWS locally (Floci)
+
+See the [full guide](floci-aws-local.md). The shortcut to put in `~/.bashrc`:
+
+```bash
+export AWS_ACCESS_KEY_ID=test
+export AWS_SECRET_ACCESS_KEY=test
+export AWS_DEFAULT_REGION=us-east-1
+alias awslocal='aws --endpoint-url=http://localhost:4566'
+```
+
+| Command | Description | Frequency |
+|----------|------------|-----------|
+| `cd ~/devops-project/floci && docker compose up -d` | Start local AWS | **daily** |
+| `curl -s -o /dev/null -w "%{http_code}\n" http://localhost:4566/health` | Check it answers (should print `200`) | **daily** |
+| `awslocal <command>` | Any AWS command, locally | **daily** |
+| `docker compose down && docker compose up -d` | Start from a clean AWS | occasional |
+| `docker compose logs -f floci` | See what's happening | occasional |
+| `docker compose down` | Stop everything and erase it | occasional |
+
+**Remember:** from your machine → `http://localhost:4566`. From another container → `http://floci:4566`.
+
+**Terraform locally** — add to the `provider "aws"` block:
+
+```hcl
+access_key = "test"
+secret_key = "test"
+skip_credentials_validation = true
+skip_metadata_api_check     = true
+skip_requesting_account_id  = true
+s3_use_path_style           = true
+endpoints {
+  ec2 = "http://localhost:4566"
+  s3  = "http://localhost:4566"
+}
+```
+
 ## Terraform
 
 | Command | Description | Frequency |

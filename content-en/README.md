@@ -58,7 +58,7 @@ We evolve it with each module:
 - **Module 0-1:** We clone it, we run it locally
 - **Module 3:** We dockerize it
 - **Module 4:** We add a CI/CD pipeline
-- **Module 5:** We deploy it on AWS manually
+- **Module 5:** We practise every AWS service locally, then deploy it on real AWS
 - **Module 6:** We automate the infra with Terraform
 - **Module 7:** We configure the server with Ansible
 - **Module 8:** We monitor it with Prometheus + Grafana
@@ -89,6 +89,8 @@ What will take you the most time is not the course — it's **finding a job**. T
 - VS Code with the Remote WSL extension
 - A GitHub account
 - Internet connection
+
+**No credit card needed for nearly the whole course.** The entire cloud section (S3, EC2, RDS, SQS, Lambda, Terraform...) is practised on a **free AWS emulator** running on your machine — see [AWS Locally](floci-aws-local.md). A real AWS account is only required **once**, for the final deployment in Module 5.
 
 ## Modules
 
@@ -140,6 +142,7 @@ What will take you the most time is not the course — it's **finding a job**. T
 
 ## Resources
 
+- [AWS Locally](floci-aws-local.md) — practise AWS for free, with no account and no credit card
 - [Cheatsheet](cheatsheet.md) — all the key commands in one file
 - [Troubleshooting](troubleshooting.md) — the most common errors and how to fix them
 - [After the Course — Going Further](aller-plus-loin.md) — tools to discover after the course + equivalents table
