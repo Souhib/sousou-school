@@ -140,23 +140,22 @@ uv run pytest
 
 **What does "4 deselected" mean?** The project contains two families of tests, and `pytest` only runs one of them by default.
 
-| | **Unit** tests (`test_main.py`) | **Integration** tests (`test_integration.py`) |
+| | **Unit** tests | **Integration** tests |
 |---|---|---|
 | They test | Your code on its own | Your code **together with** the services it talks to |
-| They need | Nothing | A database, an AWS emulator... |
+| They need | Nothing | A database, a server, an external service... |
 | Duration | Milliseconds | Seconds |
 | When | On every save, continuously | On every push, in CI |
 
-**Why both?** A unit test will never catch that you used the wrong parameter name in an S3 call — it never makes the call. An integration test will.
+**Why both?** Remember Module 3: your `main.py` has **two modes**. Without `DATABASE_URL` it stores tasks in a Python list; with `DATABASE_URL` it talks to PostgreSQL.
 
-Integration tests carry a **marker** (`@pytest.mark.integration`), and `pyproject.toml` asks pytest to skip them by default. That's deliberate: **fast tests must be runnable with nothing installed**, otherwise developers stop running them.
+But `uv run pytest` runs without `DATABASE_URL`. **So all the PostgreSQL code — half of `main.py` — is never executed by the tests.** If it contained a typo in a SQL query, no test would catch it: it would only break in production.
 
-```bash
-# Run them explicitly (Floci must be running — see Module 5)
-cd ~/devops-project/floci && docker compose up -d && cd ../backend
-AWS_ENDPOINT_URL=http://localhost:4566 uv run pytest -m integration
-# ===== 4 passed, 7 deselected =====
-```
+That's exactly the hole the rest of this module fills.
+
+> Integration tests carry a **marker** (`@pytest.mark.integration`), and `pyproject.toml` asks pytest to skip them by default. That's deliberate: **fast tests must be runnable with nothing installed**, otherwise developers stop running them.
+>
+> The ones in `test_integration.py` need cloud services — we'll switch them on in [Module 5](05-aws.md). Nothing to do with them for now.
 
 ### 3. The GitHub Actions pipeline
 
@@ -278,25 +277,25 @@ jobs:
 
 ### 4. Running integration tests in CI
 
-The pipeline above has a blind spot: the `test` job only runs unit tests. All the code that talks to **PostgreSQL** and to **AWS** is never executed.
+The pipeline above has the blind spot we just identified: the `test` job only runs unit tests, so **the code that talks to PostgreSQL is never executed**.
 
 #### The problem to solve
 
-To test that code you need a database and AWS. But a GitHub runner has neither. The three classic wrong answers:
+To test that code you need a database. But a GitHub runner is a blank machine: there's no PostgreSQL on it. The three classic wrong answers:
 
 | Bad idea | Why it's bad |
 |---|---|
-| "We'll use a real AWS test account" | You'd have to put real AWS keys in GitHub, it costs money, and two pipelines running at once collide |
-| "We'll mock everything" | You then test your own imitation of AWS, not AWS. A typo in a parameter name slips straight through |
+| "We'll point CI at the dev database" | The tests write and delete data. They'll destroy the team's work. And two pipelines running at once collide |
+| "We'll mock the database" | You then test your own imitation of PostgreSQL, not PostgreSQL. A typo in a SQL query slips straight through |
 | "We won't test that code" | That's the default choice of many teams… and the cause of many incidents |
 
-**The right answer: start the real services next to the test, for the duration of the test.** GitHub Actions calls these **service containers**.
+**The right answer: start a real database next to the test, for the duration of the test.** GitHub Actions calls these **service containers**.
 
 #### Service containers
 
-A service container is a container GitHub starts **before** your steps, that runs alongside them, and that it stops afterwards. Your tests reach it on `localhost`. It's the equivalent of a `docker compose up` managed by GitHub.
+A service container is a container GitHub starts **before** your steps, that runs alongside them, and that it stops afterwards. Your tests reach it on `localhost`. It's the equivalent of Module 3's `docker compose up`, but managed by GitHub — and thrown away at the end of the job.
 
-Add this job to your `.github/workflows/ci.yml`:
+Here is the `integration-test` job from the provided `.github/workflows/ci.yml`:
 
 ```yaml
   integration-test:
@@ -322,17 +321,6 @@ Add this job to your `.github/workflows/ci.yml`:
           --health-timeout 3s
           --health-retries 10
 
-      # The AWS emulator — the same one as in Module 5
-      floci:
-        image: floci/floci:1.7.0
-        ports:
-          - 4566:4566
-        options: >-
-          --health-cmd "curl -f http://localhost:4566/health"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
-
     steps:
       - uses: actions/checkout@v4
       - name: Setup uv
@@ -346,36 +334,63 @@ Add this job to your `.github/workflows/ci.yml`:
         run: |
           cd backend
           uv run pytest
-
-      - name: AWS integration tests
-        env:
-          AWS_ENDPOINT_URL: http://localhost:4566
-          AWS_DEFAULT_REGION: us-east-1
-          AWS_ACCESS_KEY_ID: test        # dummy: no real AWS secret needed
-          AWS_SECRET_ACCESS_KEY: test
-        run: |
-          cd backend
-          uv run pytest -m integration
 ```
 
-And change the `build` job's dependency so it waits for both:
+And the `build` job waits for **all** test jobs to pass before building the images:
 
 ```yaml
   build:
-    needs: [test, integration-test]
+    needs: [test, integration-test, aws-test]
 ```
+
+> You see three names although we've only explained two: the third, `aws-test`, comes in [Module 5](05-aws.md). That's expected — leave it as is.
+
+#### You can check it locally
+
+No need to wait for CI to see the effect: reproduce it on your machine with what you already know from Module 3.
+
+```bash
+# Start a throwaway database.
+# We publish it on port 55432 rather than 5432: if Module 3's docker compose
+# is still running, it already occupies 5432 and this would fail with
+# "port is already allocated" (see Module 2 — a port can only be used by
+# one program at a time).
+docker run -d --rm --name pgtest \
+  -e POSTGRES_USER=user -e POSTGRES_PASSWORD=pass -e POSTGRES_DB=tasks \
+  -p 55432:5432 postgres:16
+
+# Wait for it to answer: this is the manual equivalent of --health-cmd.
+# We loop at most 30 times. A loop with NO limit (`until ...; do`) would spin
+# forever if the container failed to start — a classic reason for scripts
+# that "hang" without printing anything.
+for i in $(seq 1 30); do
+  docker exec pgtest pg_isready -U user -d tasks >/dev/null 2>&1 && break
+  sleep 1
+done
+
+# The SAME tests, against the real database
+cd ~/devops-project/backend
+DATABASE_URL="postgresql://user:pass@localhost:55432/tasks" uv run pytest
+# ===== 7 passed =====
+
+docker rm -f pgtest
+```
+
+💡 **If `docker run` prints `port is already allocated`**: another program holds the port you picked. Choose a different one (`-p 55433:5432`) and adjust the `DATABASE_URL` accordingly.
+
+The same 7 tests pass in both modes. **The code didn't change by a single line** — only an environment variable appeared.
 
 #### What this job actually teaches you
 
 **1. `--health-cmd` isn't decoration.** "The container is started" ≠ "the service answers". PostgreSQL takes one to three seconds to boot. Without a health check, your tests start too early and fail one time in three — the worst kind of test, the one that fails at random (a *flaky* test). It's a very common source of CI incidents.
 
-**2. No AWS secret is needed.** `AWS_ACCESS_KEY_ID: test` written in plain text is harmless: they're dummy credentials for a local emulator. Compare with the `push` job below, which does need real Docker Hub secrets.
+**2. The same code, two configurations.** The `test` job runs the tests in memory; `integration-test` runs **exactly the same ones** against PostgreSQL. That's what proves a codebase is properly configurable — the same idea as Module 3's `depends_on`: the configuration changes, the code doesn't.
 
-**3. The same code, two configurations.** The `test` job runs the tests in memory; `integration-test` runs **exactly the same ones** against PostgreSQL. The application code doesn't differ by one line — only the `DATABASE_URL` variable appears. That's what proves a codebase is properly configurable.
+**3. A throwaway environment on every run.** The database is created empty at the start of the job and destroyed at the end. No test can pollute the next one, and no pipeline can disturb another.
 
-**4. Both jobs run in parallel.** `test` and `integration-test` both depend on `lint`, but not on each other: GitHub runs them at the same time. A pipeline isn't necessarily a straight line — anything independent should run simultaneously.
+**4. Jobs run in parallel.** `test` and `integration-test` both depend on `lint`, but not on each other: GitHub runs them at the same time. A pipeline isn't necessarily a straight line — anything independent should run simultaneously.
 
-> **In interviews**, the question *"how do you test code that talks to AWS?"* comes up often. The full answer has three parts: unit tests for the logic, an **emulator** (Floci, LocalStack, Testcontainers) for integration in CI, and a final validation on a real environment before production.
+> **There's a third job in the file, called `aws-test`.** It applies exactly the same principle, but to cloud services (S3, SQS) instead of a database. We'll switch it on in [Module 5](05-aws.md), once we've seen what AWS is — no need to worry about it now.
 
 ### 5. Configure the secrets
 
@@ -478,4 +493,5 @@ A: You deploy the new version to a small percentage of servers (e.g., 5%). You m
 - [ ] You know what a runner is
 - [ ] You know the difference between a unit test and an integration test
 - [ ] You know what a service container is, and why `--health-cmd` is essential
-- [ ] You can answer "how do you test code that talks to AWS?"
+- [ ] You've seen the same tests pass in memory AND against a real PostgreSQL
+- [ ] You know what a *flaky* test is and why it's dangerous

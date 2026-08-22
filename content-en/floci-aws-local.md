@@ -43,7 +43,7 @@ An analogy: a **flight simulator**. It isn't a plane. But the controls are in th
 | **EC2** — launch a server and SSH into it | Module 5 |
 | **CloudWatch Logs, Route 53, Secrets Manager** | Module 5 |
 | **Terraform** — `apply` and `destroy` as often as you like | Module 6 |
-| **Integration tests in CI** — with no AWS secrets in GitHub | Module 4 |
+| **Integration tests in CI** — with no AWS secrets in GitHub | Module 5 |
 
 ---
 

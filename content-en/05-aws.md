@@ -918,6 +918,88 @@ awslocal logs get-log-events \
 
 That's the "logs" pillar of observability, which you'll meet again in [Module 8](08-monitoring.md).
 
+## Completing your CI pipeline with local AWS
+
+> **Prerequisite:** [Module 4 (CI/CD)](04-cicd.md). This section builds on the pipeline you created there.
+
+In Module 4 you added an `integration-test` job that starts a real PostgreSQL for the duration of the tests. You left a third job aside, `aws-test`, until you knew what AWS was. Now you do.
+
+### The problem
+
+Your application has code that talks to S3 and SQS (`backend/aws_client.py`). How do you test it automatically on every push?
+
+| Bad idea | Why it's bad |
+|---|---|
+| "We'll use a real AWS test account" | You'd have to put **real AWS keys** in GitHub secrets — they become a target. It costs money on every run. And two pipelines running at once collide: same bucket name, same queue |
+| "We'll mock AWS" | You then test your own imitation of AWS, not AWS. A typo in a parameter name slips straight through |
+| "We won't test that code" | The default choice of many teams… and the cause of many incidents |
+
+**The right answer: the same emulator you've been using all through this module, but in CI.** Exactly like PostgreSQL in Module 4 — a service container, started for the job, thrown away afterwards.
+
+### The job
+
+The project's `.github/workflows/ci.yml` already contains it:
+
+```yaml
+  aws-test:
+    name: AWS Test
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      floci:
+        image: floci/floci:1.7.0
+        ports:
+          - 4566:4566
+        options: >-
+          --health-cmd "curl -f http://localhost:4566/health"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: AWS integration tests (Floci)
+        env:
+          AWS_ENDPOINT_URL: http://localhost:4566
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+        run: |
+          cd backend
+          uv run pytest -m integration
+```
+
+### The three things to remember
+
+**1. No AWS secret is needed.** Writing `AWS_ACCESS_KEY_ID: test` in plain text is harmless: they're dummy credentials for a local emulator. Compare with Module 4's `push` job, which does need real Docker Hub secrets via `${{ secrets.* }}`. **The best way to protect a secret is not to need one.**
+
+**2. Here we use `AWS_ENDPOINT_URL`, not the `awslocal` alias.** On your machine you type `awslocal` because your AWS CLI may be old. In CI it isn't the AWS CLI talking to AWS, it's **boto3** (the Python library) — and `aws_client.py` reads that variable itself. The code isn't modified for the tests: it's simply **configured** differently.
+
+**3. The job is independent of the other two.** `test`, `integration-test` and `aws-test` all depend on `lint` but not on each other: GitHub runs them **in parallel**.
+
+```
+                 ┌──▶ Test ─────────────┐
+   Lint ─────────┼──▶ Integration Test ─┼──▶ Build ──▶ Push
+                 └──▶ AWS Test ─────────┘
+```
+
+### Check it locally first
+
+```bash
+cd ~/devops-project/floci && docker compose up -d && cd ../backend
+
+AWS_ENDPOINT_URL=http://localhost:4566 uv run pytest -m integration
+# ===== 4 passed, 7 deselected =====
+```
+
+If it passes on your machine, it will pass in CI: same image, same version, same variables.
+
+> **In interviews**, the question *"how do you test code that talks to AWS?"* comes up often. The full answer has three parts: **unit tests** for the business logic, an **emulator** (Floci, LocalStack, Testcontainers) for integration in CI, and a **validation on a real staging environment** before production — because an emulator enforces neither IAM permissions nor quotas.
+
 ## Hands-on Project: Deploy the project on AWS
 
 > **This is where you switch to Track B -- real AWS.** It's the only exercise in the module that requires it.
@@ -1169,6 +1251,8 @@ A: AWS manages security **of** the cloud (datacenters, physical network, hypervi
 - [ ] You sent and received a message in an SQS queue, and can explain the `ReceiptHandle`
 - [ ] You deployed and ran a Lambda
 - [ ] You can name **two** things the emulator cannot do
+- [ ] You've completed your CI pipeline with the `aws-test` job
+- [ ] You can answer "how do you test code that talks to AWS?"
 
 **The concepts**
 
