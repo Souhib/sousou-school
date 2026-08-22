@@ -12,6 +12,39 @@ if [ ! -d "$SUBMODULE" ] || [ ! -f "$SUBMODULE/README.md" ]; then
   exit 1
 fi
 
+# ============================================================================
+# CONTENT MAP — the single source of truth for what gets published.
+#
+# Adding a page? Add ONE line here, and one entry in `rewrite_links` below if
+# other pages link to it with a relative .md path. Nothing else to touch except
+# the sidebar in astro.config.mjs.
+#
+# Format: source.md | dest/path.md | sidebar_order | FR title | EN title
+# ============================================================================
+CONTENT_MAP=(
+  "00-prerequisites.md|modules/00-prerequisites.md|0|Module 0 : Prérequis|Module 0: Prerequisites"
+  "01-linux-basics.md|modules/01-linux-basics.md|1|Module 1 : Linux|Module 1: Linux"
+  "02-networking.md|modules/02-networking.md|2|Module 2 : Réseau|Module 2: Networking"
+  "03-docker.md|modules/03-docker.md|3|Module 3 : Docker|Module 3: Docker"
+  "04-cicd.md|modules/04-cicd.md|4|Module 4 : CI/CD|Module 4: CI/CD"
+  "05-aws.md|modules/05-aws.md|5|Module 5 : AWS|Module 5: AWS"
+  "06-terraform.md|modules/06-terraform.md|6|Module 6 : Terraform|Module 6: Terraform"
+  "07-ansible.md|modules/07-ansible.md|7|Module 7 : Ansible|Module 7: Ansible"
+  "08-monitoring.md|modules/08-monitoring.md|8|Module 8 : Monitoring|Module 8: Monitoring"
+  "09-kubernetes.md|modules/09-kubernetes.md|9|Module 9 : Kubernetes|Module 9: Kubernetes"
+
+  "interview-questions.md|entretien/interview-questions.md|0|Questions d'entretien|Interview Questions"
+  "interview-experience.md|entretien/interview-experience.md|1|Questions d'expérience|Experience Questions"
+  "system-design-exercises.md|entretien/system-design.md|2|System Design|System Design"
+
+  "floci-aws-local.md|references/aws-local.md|0|AWS en local|AWS Locally"
+  "cheatsheet.md|references/cheatsheet.md|1|Cheatsheet|Cheatsheet"
+  "troubleshooting.md|references/troubleshooting.md|2|Troubleshooting|Troubleshooting"
+  "aller-plus-loin.md|references/aller-plus-loin.md|3|Aller plus loin|Going Further"
+
+  "devops-project/README.md|projet/index.md|0|Projet fil rouge|Hands-on Project"
+)
+
 # Clean previous sync (preserve hand-written files: index.mdx, en/index.mdx)
 rm -rf "$DOCS/modules" "$DOCS/entretien" "$DOCS/references" "$DOCS/projet"
 rm -rf "$DOCS/en/modules" "$DOCS/en/entretien" "$DOCS/en/references" "$DOCS/en/projet"
@@ -25,7 +58,7 @@ mkdir -p "$DOCS/en/modules" "$DOCS/en/entretien" "$DOCS/en/references" "$DOCS/en
 cp "$SUBMODULE"/assets/*.png "$IMAGES/" 2>/dev/null || true
 cp "$SUBMODULE"/assets/*.pdf "$IMAGES/" 2>/dev/null || true
 
-# === Link rewriting functions ===
+# === Link rewriting: relative .md links → site routes ===
 rewrite_links() {
   local prefix="${1:-}"
   sed \
@@ -42,6 +75,8 @@ rewrite_links() {
     -e "s|](system-design-exercises.md)|](${prefix}/entretien/system-design/)|g" \
     -e "s|](interview-questions.md)|](${prefix}/entretien/interview-questions/)|g" \
     -e "s|](interview-experience.md)|](${prefix}/entretien/interview-experience/)|g" \
+    -e "s|](floci-aws-local.md)|](${prefix}/references/aws-local/)|g" \
+    -e "s|](../floci-aws-local.md)|](${prefix}/references/aws-local/)|g" \
     -e "s|](cheatsheet.md)|](${prefix}/references/cheatsheet/)|g" \
     -e "s|](troubleshooting.md)|](${prefix}/references/troubleshooting/)|g" \
     -e "s|](aller-plus-loin.md)|](${prefix}/references/aller-plus-loin/)|g" \
@@ -71,71 +106,54 @@ process_file() {
   } | rewrite_links "$link_prefix" > "$dest"
 }
 
-# === MODULES ===
-process_file "$SUBMODULE/00-prerequisites.md" "$DOCS/modules/00-prerequisites.md" "Module 0 : Prérequis" 0
-process_file "$SUBMODULE/01-linux-basics.md"  "$DOCS/modules/01-linux-basics.md"  "Module 1 : Linux" 1
-process_file "$SUBMODULE/02-networking.md"    "$DOCS/modules/02-networking.md"    "Module 2 : Réseau" 2
-process_file "$SUBMODULE/03-docker.md"        "$DOCS/modules/03-docker.md"        "Module 3 : Docker" 3
-process_file "$SUBMODULE/04-cicd.md"          "$DOCS/modules/04-cicd.md"          "Module 4 : CI/CD" 4
-process_file "$SUBMODULE/05-aws.md"           "$DOCS/modules/05-aws.md"           "Module 5 : AWS" 5
-process_file "$SUBMODULE/06-terraform.md"     "$DOCS/modules/06-terraform.md"     "Module 6 : Terraform" 6
-process_file "$SUBMODULE/07-ansible.md"       "$DOCS/modules/07-ansible.md"       "Module 7 : Ansible" 7
-process_file "$SUBMODULE/08-monitoring.md"    "$DOCS/modules/08-monitoring.md"    "Module 8 : Monitoring" 8
-process_file "$SUBMODULE/09-kubernetes.md"    "$DOCS/modules/09-kubernetes.md"    "Module 9 : Kubernetes" 9
+# === Sync one locale from the content map ===
+# $1 = source root, $2 = destination root, $3 = link prefix, $4 = title column (4=FR, 5=EN)
+sync_locale() {
+  local src_root="$1" dest_root="$2" prefix="$3" title_col="$4"
+  local count=0
 
-# === ENTRETIEN ===
-process_file "$SUBMODULE/interview-questions.md"     "$DOCS/entretien/interview-questions.md"  "Questions d'entretien" 0
-process_file "$SUBMODULE/interview-experience.md"    "$DOCS/entretien/interview-experience.md" "Questions d'expérience" 1
-process_file "$SUBMODULE/system-design-exercises.md" "$DOCS/entretien/system-design.md"        "System Design" 2
+  for entry in "${CONTENT_MAP[@]}"; do
+    IFS='|' read -r src dest order title_fr title_en <<< "$entry"
+    local title
+    [ "$title_col" = "4" ] && title="$title_fr" || title="$title_en"
 
-# === REFERENCES ===
-process_file "$SUBMODULE/cheatsheet.md"      "$DOCS/references/cheatsheet.md"      "Cheatsheet" 0
-process_file "$SUBMODULE/troubleshooting.md" "$DOCS/references/troubleshooting.md" "Troubleshooting" 1
-process_file "$SUBMODULE/aller-plus-loin.md" "$DOCS/references/aller-plus-loin.md" "Aller plus loin" 2
+    if [ -f "$src_root/$src" ]; then
+      process_file "$src_root/$src" "$dest_root/$dest" "$title" "$order" "$prefix"
+      count=$((count + 1))
+    fi
+  done
 
-# === PROJET ===
-process_file "$SUBMODULE/devops-project/README.md" "$DOCS/projet/index.md" "Projet fil rouge" 0
+  echo "$count"
+}
 
-# === ENGLISH CONTENT (from content-en/) ===
-if [ -d "$CONTENT_EN" ] && [ "$(ls -A "$CONTENT_EN"/*.md 2>/dev/null)" ]; then
+# === FRENCH (from content-source/) ===
+FR_COUNT=$(sync_locale "$SUBMODULE" "$DOCS" "" 4)
+
+# === ENGLISH (from content-en/) ===
+if [ -d "$CONTENT_EN" ] && [ -n "$(ls -A "$CONTENT_EN"/*.md 2>/dev/null)" ]; then
   echo "Syncing English content..."
-
-  EN_PREFIX="/en"
-
-  # === EN MODULES ===
-  [ -f "$CONTENT_EN/00-prerequisites.md" ] && process_file "$CONTENT_EN/00-prerequisites.md" "$DOCS/en/modules/00-prerequisites.md" "Module 0: Prerequisites" 0 "$EN_PREFIX"
-  [ -f "$CONTENT_EN/01-linux-basics.md" ]  && process_file "$CONTENT_EN/01-linux-basics.md"  "$DOCS/en/modules/01-linux-basics.md"  "Module 1: Linux" 1 "$EN_PREFIX"
-  [ -f "$CONTENT_EN/02-networking.md" ]    && process_file "$CONTENT_EN/02-networking.md"    "$DOCS/en/modules/02-networking.md"    "Module 2: Networking" 2 "$EN_PREFIX"
-  [ -f "$CONTENT_EN/03-docker.md" ]        && process_file "$CONTENT_EN/03-docker.md"        "$DOCS/en/modules/03-docker.md"        "Module 3: Docker" 3 "$EN_PREFIX"
-  [ -f "$CONTENT_EN/04-cicd.md" ]          && process_file "$CONTENT_EN/04-cicd.md"          "$DOCS/en/modules/04-cicd.md"          "Module 4: CI/CD" 4 "$EN_PREFIX"
-  [ -f "$CONTENT_EN/05-aws.md" ]           && process_file "$CONTENT_EN/05-aws.md"           "$DOCS/en/modules/05-aws.md"           "Module 5: AWS" 5 "$EN_PREFIX"
-  [ -f "$CONTENT_EN/06-terraform.md" ]     && process_file "$CONTENT_EN/06-terraform.md"     "$DOCS/en/modules/06-terraform.md"     "Module 6: Terraform" 6 "$EN_PREFIX"
-  [ -f "$CONTENT_EN/07-ansible.md" ]       && process_file "$CONTENT_EN/07-ansible.md"       "$DOCS/en/modules/07-ansible.md"       "Module 7: Ansible" 7 "$EN_PREFIX"
-  [ -f "$CONTENT_EN/08-monitoring.md" ]    && process_file "$CONTENT_EN/08-monitoring.md"     "$DOCS/en/modules/08-monitoring.md"    "Module 8: Monitoring" 8 "$EN_PREFIX"
-  [ -f "$CONTENT_EN/09-kubernetes.md" ]    && process_file "$CONTENT_EN/09-kubernetes.md"    "$DOCS/en/modules/09-kubernetes.md"    "Module 9: Kubernetes" 9 "$EN_PREFIX"
-
-  # === EN INTERVIEW ===
-  [ -f "$CONTENT_EN/interview-questions.md" ]     && process_file "$CONTENT_EN/interview-questions.md"     "$DOCS/en/entretien/interview-questions.md"  "Interview Questions" 0 "$EN_PREFIX"
-  [ -f "$CONTENT_EN/interview-experience.md" ]    && process_file "$CONTENT_EN/interview-experience.md"    "$DOCS/en/entretien/interview-experience.md" "Experience Questions" 1 "$EN_PREFIX"
-  [ -f "$CONTENT_EN/system-design-exercises.md" ] && process_file "$CONTENT_EN/system-design-exercises.md" "$DOCS/en/entretien/system-design.md"        "System Design" 2 "$EN_PREFIX"
-
-  # === EN REFERENCES ===
-  [ -f "$CONTENT_EN/cheatsheet.md" ]      && process_file "$CONTENT_EN/cheatsheet.md"      "$DOCS/en/references/cheatsheet.md"      "Cheatsheet" 0 "$EN_PREFIX"
-  [ -f "$CONTENT_EN/troubleshooting.md" ] && process_file "$CONTENT_EN/troubleshooting.md" "$DOCS/en/references/troubleshooting.md" "Troubleshooting" 1 "$EN_PREFIX"
-  [ -f "$CONTENT_EN/aller-plus-loin.md" ] && process_file "$CONTENT_EN/aller-plus-loin.md" "$DOCS/en/references/aller-plus-loin.md" "Going Further" 2 "$EN_PREFIX"
-
-  # === EN PROJECT ===
-  [ -f "$CONTENT_EN/devops-project/README.md" ] && process_file "$CONTENT_EN/devops-project/README.md" "$DOCS/en/projet/index.md" "Hands-on Project" 0 "$EN_PREFIX"
-
-  echo "  - $(find "$DOCS/en" -name '*.md' ! -name 'index.mdx' | wc -l | tr -d ' ') English pages"
+  EN_COUNT=$(sync_locale "$CONTENT_EN" "$DOCS/en" "/en" 5)
 else
+  EN_COUNT=0
   echo "No English content found in $CONTENT_EN/ — skipping EN sync."
 fi
 
+# === Report ===
 echo ""
 echo "Content synced successfully."
-echo "  - $(find "$DOCS/modules" -name '*.md' | wc -l | tr -d ' ') modules (FR)"
-echo "  - $(find "$DOCS/entretien" -name '*.md' | wc -l | tr -d ' ') entretien pages (FR)"
-echo "  - $(find "$DOCS/references" -name '*.md' | wc -l | tr -d ' ') reference pages (FR)"
-echo "  - $(find "$DOCS/projet" -name '*.md' | wc -l | tr -d ' ') projet pages (FR)"
+echo "  - $FR_COUNT French pages"
+echo "  - $EN_COUNT English pages"
+echo "      modules   : $(find "$DOCS/modules" -name '*.md' | wc -l | tr -d ' ')"
+echo "      entretien : $(find "$DOCS/entretien" -name '*.md' | wc -l | tr -d ' ')"
+echo "      references: $(find "$DOCS/references" -name '*.md' | wc -l | tr -d ' ')"
+echo "      projet    : $(find "$DOCS/projet" -name '*.md' | wc -l | tr -d ' ')"
 echo "  - $(find "$IMAGES" -type f | wc -l | tr -d ' ') assets"
+
+# === Warn about unrewritten relative .md links (would 404 on the site) ===
+BROKEN=$(grep -rhoE '\]\([^)]*\.md\)' "$DOCS" 2>/dev/null | sort -u || true)
+if [ -n "$BROKEN" ]; then
+  echo ""
+  echo "WARNING: these relative .md links were not rewritten and will 404:"
+  echo "$BROKEN" | sed 's/^/  /'
+  echo "Add them to rewrite_links() in scripts/sync-content.sh"
+fi
