@@ -2,9 +2,9 @@
 
 > **Prerequisites:** [Module 0](00-prerequisites.md) (Git, GitHub), [Module 3](03-docker.md) (Docker -- build, images)
 
-> **In a nutshell:** You automate the verification and deployment of your code with GitHub Actions. On every push, a pipeline checks the code (lint), runs the tests, builds Docker images and pushes them to Docker Hub -- without any human intervention.
+> **In a nutshell:** You automate the verification **and the deployment** of your code with GitHub Actions. On every push, a pipeline checks the code (lint), runs the tests, builds Docker images, pushes them to Docker Hub **and updates your server over SSH** -- without any human intervention.
 
-> In [Module 3](03-docker.md), you learned how to build Docker images and run them with `docker compose`. But who builds those images when you push your code? Who checks that the tests pass? Who pushes the images to Docker Hub? That's the role of CI/CD -- automating all of that.
+> In [Module 3](03-docker.md), you learned how to build Docker images and run them with `docker compose`. But who builds those images when you push your code? Who checks that the tests pass? Who pushes the images to Docker Hub? Who deploys to the server? That's the role of CI/CD -- automating all of that.
 
 ## What is CI/CD and why does it exist?
 
@@ -18,18 +18,21 @@ It's the difference between baking each pizza by hand and having an automated ov
 - **Delivery** = the code is ready to be deployed (manual button)
 - **Deployment** = the code is deployed automatically if everything is green
 
-**The analogy:** An assembly line in a factory. You push the raw material (the code) onto the conveyor belt. Station 1 = quality control (lint). Station 2 = taste test (tests). Station 3 = packaging (build). Station 4 = delivery (deploy). If a defect is detected at any station, the line stops. This is the "fail fast" principle.
+**The analogy:** An assembly line in a factory. You push the raw material (the code) onto the conveyor belt. Station 1 = quality control (lint). Station 2 = taste test (tests). Station 3 = packaging (build). Station 4 = dropping off at the depot (push). Station 5 = delivery to the customer (deploy). If a defect is detected at any station, the line stops. This is the "fail fast" principle.
 
-## The 4 classic stages of a pipeline
+## The classic stages of a pipeline
 
 | Stage | What it does | Analogy | Tools (for us) |
 |-------|-------------|---------|----------------|
 | **Lint** | Checks code style and quality (syntax errors, unused variables, bad practices) -- like a spell checker for code | Spell checker | Ruff (Python), Oxlint (JS) |
 | **Test** | Checks that the code does what it should | Tasting the dish | Pytest |
 | **Build** | Compiles/packages the application | Packaging the dish | Docker build |
-| **Deploy** | Puts it in production | Delivering to the customer | Docker push |
+| **Push** (delivery) | Publishes the image to a registry -- the parcel is ready to ship | Dropping the parcel off at the depot | `docker push` (Docker Hub) |
+| **Deploy** (deployment) | Puts the code in production -- the parcel arrives at the customer | Delivering to the customer | SSH + `docker compose` (Modules 6-7) |
 
 These stages run in sequence. If lint fails, no tests. If tests fail, no build. Fail fast.
+
+> ⚠️ **Delivery ≠ deployment.** Pushing an image to Docker Hub (*push*) puts **nothing** in production: it just publishes a ready-to-use artifact. The *Deploy* stage is what actually installs the new version on the server. This module does both.
 
 ## GitHub Actions -- The basics
 
@@ -169,8 +172,10 @@ The project already provides the `.github/workflows/ci.yml` file. Before reading
 | `run: |` | The `|` after `run:` lets you write **multiple lines** of commands (otherwise `run:` only accepts a single line) | `run: |` then `cd backend` then `uv run pytest` |
 | `${{ ... }}` | Insert a GitHub Actions **variable**. It's like `$VARIABLE` in bash but with the `${{ }}` syntax specific to GitHub Actions | `${{ github.sha }}` = the commit hash |
 | `${{ secrets.NAME }}` | Access a **secret** stored in GitHub (Settings -> Secrets). The secret never appears in the logs | `${{ secrets.DOCKERHUB_TOKEN }}` |
+| `${{ vars.NAME }}` | Access a **repository variable** (Settings -> Variables) -- like a secret, but **non-sensitive** and visible in the logs | `${{ vars.DEPLOY_ENABLED }}` |
 | `with:` | Pass **parameters** to a `uses:` action. It's like passing arguments to a function | `with: username: ...` for the Docker login action |
 | `if:` | Run this job **only if** the condition is true. `==` means "is equal to", `&&` means "AND" | `if: github.ref == 'refs/heads/main'` = only on the main branch |
+| `environment:` | Attach a job to a **protected environment** (`production`), which can require a manual approval before it runs | `environment: production` |
 
 Here's the complete file with comments:
 
@@ -420,6 +425,89 @@ Go to the **Actions** tab of your GitHub repo. You'll see the pipeline running: 
 
 💡 **If the Docker Hub push fails:** check that the secrets are properly configured. The `push` job only runs on the `main` branch (not on pull requests).
 
+### 7. Deploy automatically (the "CD")
+
+So far, your pipeline **checks** the code, **builds** the images and **pushes** them to Docker Hub. But your server is still running the old version. You're still deploying by hand (Modules [6](06-terraform.md) and [7](07-ansible.md)).
+
+Let's close the loop: **push -> CI passes -> the server updates itself**. That's *Continuous Deployment*.
+
+The `deploy` job already exists at the end of `ci.yml`:
+
+```yaml
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: push
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.DEPLOY_ENABLED == 'true'
+    environment: production
+    steps:
+      - name: Deploy over SSH to the server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/devops-project
+            git pull
+            docker compose up -d --build
+      - name: Check that the app responds
+        run: curl -fsS "http://${{ secrets.EC2_HOST }}/api/health"
+```
+
+Let's break it down:
+
+| Line | Role |
+|------|------|
+| `needs: push` | We only deploy if the image was actually pushed (so if everything is green) |
+| `if: ... vars.DEPLOY_ENABLED == 'true'` | **Switch**: without the variable, the job is *skipped* (your pipeline stays green even if you don't have a server yet) |
+| `environment: production` | Protects production: you can require a **manual approval** before the job starts |
+| `appleboy/ssh-action` | Connects to the server over SSH with your key, and runs the script |
+| `set -e` | Stops the script at the first error: without it, a failed `git pull` wouldn't prevent the rest from running |
+| `git pull && docker compose up -d --build` | Pulls the new code and restarts the app |
+| `curl ... /api/health` | Checks that the app responds after the deployment |
+
+**To enable it**, go to **Settings** -> **Secrets and variables** -> **Actions** and create:
+
+| Type | Name | Value |
+|------|------|-------|
+| Secret | `EC2_HOST` | Your server's public IP (Terraform's `public_ip` output, Module 6) |
+| Secret | `EC2_SSH_KEY` | The **full contents** of your private key (`cat ~/devops-key.pem`, including the `BEGIN`/`END` lines) |
+| Variable | `DEPLOY_ENABLED` | `true` |
+
+> ⚠️ `EC2_SSH_KEY` is the **private** key file: it's a secret, never in the repository.
+
+The job assumes the server already has the repository in `~/devops-project` (that's what Terraform does in [Module 6](06-terraform.md) and Ansible in [Module 7](07-ansible.md)).
+
+**Repeat the exercise:** change a title in the app, commit, push. Go to **Actions**: `Lint -> Test -> ... -> Push -> Deploy`. When it's green, reload `http://YOUR_IP`: **your change is live**, and you never touched the server. 🎉
+
+#### Protecting production (manual approval)
+
+By default, `deploy` runs on its own as soon as the pipeline is green. On a team, you often want a human to validate before touching production. That's what the `environment` keyword is for:
+
+**Settings** -> **Environments** -> **New environment** -> `production` -> check **Required reviewers** and add yourself. Now the `deploy` job **waits for your click** before starting. This is exactly the difference between *Delivery* (manual button) and *Deployment* (automatic).
+
+#### What if the deployment breaks production?
+
+Two reflexes:
+
+```bash
+# 1. Revert the faulty commit and push again -> CI redeploys the previous version
+git revert <commit_sha>
+git push
+```
+
+```bash
+# 2. Or roll back by hand on the server, while you wait
+git checkout <previous_commit>
+docker compose up -d --build
+```
+
+That's why we keep a clean Git history: **rolling back is just going back to a commit.**
+
+> 💡 **Going further: deploy the exact image built by CI.** Here, the server rebuilds the image (`--build`): it deploys your *code*, not the image the CI tested. The holy grail of CD is *"build once, run the same artifact"*: add `image: my-user/devops-backend:latest` to the services in `docker-compose.yml`, then on the server run `docker compose pull && docker compose up -d --no-build`. The server then runs **exactly** the image the CI validated. We keep the `--build` version here, as it's simpler to understand when you're starting out.
+
 ## Secrets and environment variables
 
 **NEVER put passwords or tokens in the code.** Use GitHub secrets.
@@ -447,13 +535,19 @@ env:
 A: CI = automatically checking code on every push (lint, tests). CD = automatically deploying if everything passes. It reduces human errors and speeds up deliveries.
 
 **Q: What are the stages of a typical CI/CD pipeline?**
-A: Lint (code quality) -> Tests -> Build (artifact construction) -> Deploy. Each stage blocks the next one if it fails.
+A: Lint (code quality) -> Tests -> Build (artifact construction) -> Push (publishing the image to a registry) -> Deploy (putting it in production). Each stage blocks the next one if it fails.
 
 **Q: What is "fail fast"?**
 A: If a stage fails, everything stops immediately. No need to build if the tests don't pass. It saves time and resources.
 
+**Q: What's the difference between delivering (pushing) an image and deploying it?**
+A: *Pushing* an image to Docker Hub makes it available, but changes nothing about what's running in production. *Deploying* means installing that new version on the server and restarting the app. You can deliver on every push and only deploy after validation.
+
 **Q: Where should you store secrets in a pipeline?**
-A: In the CI/CD secrets (GitHub Secrets, GitLab Variables, etc.). Never in the code, never in committed YAML files.
+A: In the CI/CD secrets (GitHub Secrets, GitLab Variables, etc.). Never in the code, never in committed YAML files. Non-sensitive values (feature switches, hostnames) can go in repository *variables* instead.
+
+**Q: What is a protected environment (environment)?**
+A: A GitHub Actions safeguard: you attach a job to a named environment (`production`) for which you can require reviewers. The job then waits for a human approval before running -- handy to deploy to prod only with sign-off.
 
 **Q: Difference between Continuous Delivery and Continuous Deployment?**
 A: Delivery = ready to deploy but manual button. Deployment = automatic deployment. Most companies do Delivery.
@@ -483,20 +577,25 @@ A: You deploy the new version to a small percentage of servers (e.g., 5%). You m
 - **Tests that pass locally but not in CI** -> Often a dependency issue or missing environment variables.
 - **Pipeline too slow** -> Parallelize independent jobs (lint backend and lint frontend in parallel).
 - **Committing secrets** -> If it happens, change them IMMEDIATELY. Git keeps the history.
+- **The `deploy` job fails over SSH** (`Permission denied (publickey)`) -> the `EC2_SSH_KEY` secret must contain the **entire private key** (including the `-----BEGIN ... -----`/`-----END ... -----` lines), not just a file path. Also check that the user is `ubuntu` (not `root`).
+- **Deploying the wrong version** -> the job deploys whatever is on `main`. Automatic deployment assumes `main` is always deployable: protect it (required Pull Requests, green CI required before merge).
 
 ## Going further
 
 - **Deployment strategies**: blue-green (two environments), canary (progressive deployment) -- beyond the rolling update covered in the curriculum
 - **Quality gates**: test coverage thresholds, automated security analysis (SonarQube, Snyk) -- increasingly required
-- **ArgoCD**: GitOps -- the Git repo IS the source of truth for deployment. You push YAML, ArgoCD deploys automatically on K8s (requires having done [Module 9](09-kubernetes.md) -- Kubernetes)
+- **Automatic rollback**: watch health after deployment and go back on your own if it breaks (healthchecks, `kubectl rollout undo`)
+- **ArgoCD (GitOps)**: the Git repo IS the source of truth for deployment. You push YAML, ArgoCD deploys automatically on K8s (requires having done [Module 9](09-kubernetes.md) -- Kubernetes)
 
 ## You can move on to the next module if...
 
 - [ ] You can explain CI (automatic verification) and CD (automatic deployment)
-- [ ] You know the 4 stages of a pipeline (lint -> test -> build -> deploy)
+- [ ] You know the stages of a pipeline (lint -> test -> build -> push -> deploy)
+- [ ] You know the difference between *delivering* an image (push) and *deploying* (putting it in production)
 - [ ] You understand the "fail fast" concept
 - [ ] The GitHub Actions pipeline runs on your repo (Actions tab)
-- [ ] You know how to configure secrets in GitHub (Settings -> Secrets)
+- [ ] You know how to configure secrets **and variables** in GitHub (Settings -> Secrets and variables)
+- [ ] You know how to enable the `deploy` job and what `environment: production` does
 - [ ] You know what a runner is
 - [ ] You know the difference between a unit test and an integration test
 - [ ] You know what a service container is, and why `--health-cmd` is essential

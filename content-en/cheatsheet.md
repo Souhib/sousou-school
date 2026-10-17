@@ -141,8 +141,10 @@ jobs:
 | Concept | Syntax |
 |---------|--------|
 | Secret | `${{ secrets.<SECRET_NAME> }}` |
+| Variable (non-sensitive) | `${{ vars.<VARIABLE_NAME> }}` |
 | Dependency between jobs | `needs: <job_name>` |
 | Condition | `if: github.ref == 'refs/heads/main'` |
+| Protected environment | `environment: production` |
 
 ## AWS CLI
 

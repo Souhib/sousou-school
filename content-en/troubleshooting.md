@@ -297,6 +297,49 @@ denied: requested access to the resource is denied
 
 ---
 
+### The `deploy` job fails over SSH: `Permission denied (publickey)`
+
+```
+ssh: handshake failed: ssh: unable to authenticate, attempted methods [none publickey]
+```
+
+**What it means:** GitHub Actions can't connect to the server with the key you provided.
+
+**How to fix:**
+```
+# The EC2_SSH_KEY secret must contain the ENTIRE PRIVATE KEY,
+# not a file path:
+cat ~/devops-key.pem
+# Copy EVERYTHING, including:
+#   -----BEGIN OPENSSH PRIVATE KEY----- (or RSA)
+#   ...the content...
+#   -----END OPENSSH PRIVATE KEY-----
+# then paste it into Settings → Secrets and variables → Actions → New secret → EC2_SSH_KEY
+
+# Also check:
+# - EC2_HOST = the server's PUBLIC IP (not a private IP)
+# - username = "ubuntu" (not "root") — on Amazon Linux it's "ec2-user"
+# - the server actually has the repo in ~/devops-project (Modules 6 and 7)
+```
+
+---
+
+### The `deploy` job is "skipped"
+
+**What it means:** This is normal if you haven't enabled it. The job only runs if the repository **variable** `DEPLOY_ENABLED` is `true`.
+
+**How to fix:**
+```
+# Settings → Secrets and variables → Actions → the "Variables" tab
+# → New repository variable → DEPLOY_ENABLED = true
+# (note: it's a VARIABLE, not a secret)
+#
+# The job also only runs on a direct push to main
+# — not on a pull request.
+```
+
+---
+
 ### The pipeline passes but the app is broken in prod
 
 **What it means:** The tests don't cover the case that breaks. The pipeline does its job (it runs the tests), but the tests don't check everything.

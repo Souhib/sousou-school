@@ -309,6 +309,7 @@ A: A way to organize a playbook into reusable components. A role bundles tasks, 
 - **Ansible Vault**: encrypt secrets in playbooks — essential as soon as you have passwords in your Ansible files
 - **Ansible Roles**: organize your playbooks into reusable modules — essential when managing more than 2-3 servers
 - **Ansible Galaxy**: community role library — instead of writing everything yourself, reuse existing roles
+- **Automate the trigger**: instead of running `ansible-playbook deploy.yml` by hand, you can trigger it from your GitHub Actions pipeline (see [Module 4](04-cicd.md), step 7). Ansible describes the *how* of configuring the machine; CD decides the *when*. In companies the two are often combined: CI builds the image, the deploy job runs the playbook.
 
 ## You can move on to the next module if...
 

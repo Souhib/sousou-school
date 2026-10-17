@@ -29,7 +29,7 @@ A simple application (React frontend + FastAPI backend) used throughout the DevO
 
 ```
 .github/workflows/
-  ci.yml                    → CI/CD Pipeline (lint → test/integration → build → push)
+  ci.yml                    → CI/CD Pipeline (lint → test/integration → build → push → deploy)
 frontend/                   → Vite + React (managed by Bun)
   Dockerfile                → Multi-stage build (Bun → nginx)
   nginx.conf                → Reverse proxy to the backend
