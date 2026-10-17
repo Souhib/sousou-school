@@ -145,7 +145,7 @@ We saw in [Module 0](00-prerequisites.md) that each language has its own package
 sudo apt update
 
 # Install software
-sudo apt install -y curl wget git
+sudo apt install -y curl wget git nano
 
 # Search for a package
 apt search software_name
@@ -269,7 +269,8 @@ grep -r "TODO" ~/devops-project/     # -r = recursive (searches in subfolders to
 grep -i "error" my_file.txt      # -i = case insensitive (Error, ERROR, error → all found)
 
 # Search for files by name
-find ~/devops-project -name "*.py"
+# (the -not -path skips the thousands of files in the .venv/ folder)
+find ~/devops-project -name "*.py" -not -path "*/.venv/*"
 # /home/user/devops-project/backend/main.py
 # /home/user/devops-project/backend/test_main.py
 ```

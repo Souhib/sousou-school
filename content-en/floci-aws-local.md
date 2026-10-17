@@ -87,7 +87,9 @@ You can also list the emulated services:
 
 ```bash
 curl -s http://localhost:4566/health | head -c 300
-# {"version":"1.7.0","services":{"s3":"running","sqs":"running","ec2":"running",...
+# {"services":{"s3":"running","sqs":"running","ec2":"running", ...}, ...}
+# The exact shape depends on the Floci version: what matters is that the
+# emulated services show up (s3, sqs, ec2, dynamodb, rds, lambda…).
 ```
 
 ---
@@ -192,7 +194,9 @@ export AWS_SECRET_ACCESS_KEY=test
 
 **Floci doesn't check credentials.** It accepts anything. But the AWS CLI refuses to send a request when no credentials are set — it stops before even trying. So we give it fake ones, purely to satisfy it.
 
-**And `us-east-1`?** That's a **region** — a place in the world where AWS has data centres. Floci doesn't care (everything runs on your machine), but the AWS CLI requires one. We pick `us-east-1` because it's the default in most tools, which avoids surprises with Terraform.
+**And `us-east-1`?** That's a **region** — a place in the world where AWS has data centres. The AWS CLI requires a region, so we pick `us-east-1` because it's the default in most tools.
+
+> ⚠️ **Floci partitions by region.** Everything does run on your machine, but resources are tied to the region they were created in: a resource created in `eu-west-3` (for example with Terraform, Module 6) **won't appear** in an `awslocal` call left on `us-east-1`. To find it, add `--region eu-west-3` to the command (or set `aws_region = "us-east-1"` in Terraform locally).
 
 ---
 
@@ -297,7 +301,7 @@ This is the most important section on this page. An emulator isn't magic, and kn
 | **IAM permissions are not enforced** | Floci accepts **any** credentials and has no authorization engine. You can write a very restrictive policy and it will block nothing. | You learn IAM **syntax**, not its **effect**. You'll only meet real `AccessDenied` errors on real AWS. |
 | **No web console** | AWS has a website with buttons; Floci only has an API. | You only practise on the command line. That's a real gap: interviewers sometimes ask you to describe the console. |
 | **No billing, no quotas** | Nothing is metered or limited. | You don't learn to think in terms of cost — and that's a genuine DevOps skill. |
-| **No access from the internet** | Your "EC2" has no publicly reachable IP. Its "public IP" is `127.0.0.1`, your own machine. | You can't show your app to somebody else. |
+| **No access from the internet** | Your "EC2" isn't reachable from the outside. `describe-instances` doesn't return a public IP at all (`PublicIpAddress: None`) — you access it via `127.0.0.1` and the Docker-mapped port (see Module 5: `ssh -p 2200 root@127.0.0.1`). | You can't show your app to somebody else. |
 | **Docker doesn't run *inside* an emulated EC2 instance** | The emulated instance is already a container. Installing Docker in it works, but **running** a container fails (a nested storage limitation). | ⚠️ **The project's final deployment (`docker compose up` on the server) must be done on real AWS.** |
 | **Coverage varies by service** | Floci is a young project (first public release March 2026). The main services are solid, the more exotic ones less so. | If a rare command fails, it isn't necessarily your fault. Check [the project repository](https://github.com/floci-io/floci). |
 

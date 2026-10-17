@@ -317,6 +317,8 @@ The fix: store the state in a **remote backend**, usually an S3 bucket. Let's do
 awslocal s3 mb s3://taskflow-tfstate
 ```
 
+> 💡 **`awslocal`** is a shortcut defined in the [Floci / AWS locally](floci-aws-local.md) appendix (it's `aws --endpoint-url http://localhost:4566`). It points to **us-east-1** by default — if your Terraform `aws_region` is `eu-west-3`, add `--region eu-west-3` to your `awslocal` commands to see the resources.
+
 Add a `backend` block inside `terraform`:
 
 ```hcl
@@ -356,10 +358,13 @@ terraform {
 ```bash
 # Re-initialise: Terraform detects the new backend
 terraform init
+# If a local state exists and isn't empty, Terraform asks:
 # Do you want to copy existing state to the new backend? → yes
 
 terraform apply
 ```
+
+> 💡 If the local state was empty (for example after a `destroy`), Terraform **asks nothing** — that's normal: there's nothing to migrate.
 
 **Check that it worked:**
 
@@ -368,10 +373,14 @@ terraform apply
 awslocal s3 ls s3://taskflow-tfstate/formation/
 # 2026-08-22 14:54:37       1617 terraform.tfstate
 
-# And there's no local file any more
-ls terraform.tfstate
-# ls: cannot access 'terraform.tfstate': No such file or directory
+# Terraform does read the remote state
+terraform state list
+# aws_vpc.main
+# aws_subnet.public
+# ...
 ```
+
+> ⚠️ **The local `terraform.tfstate` file may subsist.** Depending on the Terraform version, after the migration a local `terraform.tfstate` remains (empty, 0 bytes, or stale) — useless, but not always deleted. Don't rely on `ls terraform.tfstate` to verify: look at `terraform state list` and the contents of the S3 bucket instead.
 
 **What you just did is exactly what happens in a company.** The state lives in a shared bucket, every team member works against the same state, and the bucket has versioning enabled so you can roll back. When a recruiter asks *"where do you store your Terraform state?"*, the expected answer is: "in a remote backend, S3 with versioning enabled, never in Git".
 
@@ -412,6 +421,26 @@ terraform {
 
 provider "aws" {
   region = var.aws_region          # The AWS region (defined in variables.tf)
+
+  # --- Redirect to the local emulator (Floci) ---
+  # These lines make the SAME code usable locally AND on real AWS:
+  # - without -var, aws_endpoint is "" → we talk to real AWS
+  # - with -var="aws_endpoint=http://localhost:4566" → everything goes to Floci
+  skip_credentials_validation = var.aws_endpoint != ""
+  skip_metadata_api_check     = var.aws_endpoint != ""
+  skip_requesting_account_id  = var.aws_endpoint != ""
+  s3_use_path_style           = var.aws_endpoint != ""
+  access_key                  = var.aws_endpoint != "" ? "test" : null
+  secret_key                  = var.aws_endpoint != "" ? "test" : null
+
+  dynamic "endpoints" {
+    for_each = var.aws_endpoint != "" ? [1] : []
+    content {
+      ec2 = var.aws_endpoint
+      s3  = var.aws_endpoint
+      iam = var.aws_endpoint
+    }
+  }
 }
 
 # --- VPC ---
@@ -542,7 +571,9 @@ resource "aws_instance" "web" {
     cd /home/ubuntu/devops-project
     # ${var.github_user} = inserts the value of the "github_user" variable
     # This is Terraform's syntax for inserting a variable into text
-    # (different from GitHub Actions which uses ${{ }} -- each tool has its own syntax)
+    # (GitHub Actions, by contrast, uses its own double-brace syntax)
+    # ⚠️ Do NOT write a dollar sign followed by a brace in this block: inside a
+    # heredoc, Terraform interprets these sequences, even within comments.
     git clone https://github.com/${var.github_user}/devops-project.git .
     # ⚠️ If your repo is private, git clone will fail.
     # Solution: make it public or use a GitHub token in the URL:
@@ -561,6 +592,14 @@ Create `variables.tf`:
 ```hcl
 variable "aws_region" {
   default = "eu-west-3"
+  # ⚠️ Locally (Floci), prefer "us-east-1": the emulator and your awslocal alias
+  # are on us-east-1. A resource created in eu-west-3 is NOT visible unless you
+  # add --region eu-west-3 to the awslocal commands.
+}
+
+variable "aws_endpoint" {
+  description = "URL of the local AWS emulator. Leave empty for real AWS."
+  default     = ""
 }
 
 variable "project_name" {
@@ -623,16 +662,25 @@ This is how you manage multiple environments: a `dev.tfvars`, a `staging.tfvars`
 terraform init
 # Terraform has been successfully initialized!
 
+# Option A — test locally on the emulator (free, no AWS account)
+terraform plan  -var="aws_endpoint=http://localhost:4566"
+terraform apply -var="aws_endpoint=http://localhost:4566"
+# Plan: 7 to add, 0 to change, 0 to destroy.
+# Apply complete! Resources: 7 added
+
+# Option B — on real AWS (needs your credentials: aws configure)
 terraform plan
-# Plan: 6 to add, 0 to change, 0 to destroy.
+# Plan: 7 to add, 0 to change, 0 to destroy.
 
 terraform apply
-# Apply complete! Resources: 6 added
+# Apply complete! Resources: 7 added
 # Outputs:
 #   app_url    = "http://13.38.x.x"
 #   public_ip  = "13.38.x.x"
 #   ssh_command = "ssh -i ~/devops-key.pem ubuntu@13.38.x.x"
 ```
+
+> ⚠️ **`terraform plan` without `-var` queries real AWS.** With no credentials configured, it fails with `Error: No valid credential sources found`. That's normal: start with **Option A** (the Floci emulator), then move to Option B once everything is green.
 
 Wait 2-3 minutes (user_data installs Docker and launches the app), then open the URL.
 
@@ -642,7 +690,7 @@ Wait 2-3 minutes (user_data installs Docker and launches the app), then open the
 
 ```bash
 terraform destroy
-# Destroy complete! Resources: 6 destroyed.
+# Destroy complete! Resources: 7 destroyed.
 ```
 
 ### 8. Bonus -- The same code on both

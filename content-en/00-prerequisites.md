@@ -118,6 +118,25 @@ In plain English: "As admin, update the catalog of available software, **then** 
 
 You'll see `sudo apt install -y <package>` throughout the entire course. It's THE command for installing software on Linux.
 
+### The base tools: curl, wget, git, nano
+
+Before anything else, install the **command-line tools** we use throughout the course. On Ubuntu/WSL:
+
+```bash
+sudo apt update && sudo apt install -y curl wget git nano
+```
+
+| Tool | What it's used for in this course |
+|---|---|
+| `curl` | download from the Internet (used to install uv, Bun, the AWS CLI…) |
+| `wget` | like `curl`, another syntax |
+| `git` | version control (you configure it right after) |
+| `nano` | a simple text editor in the terminal, to edit your files |
+
+> ⚠️ **Classic trap**: the installations that follow (`curl … | sh`) **fail without a clear message** if `curl` isn't already installed — the `| sh` pipe receives nothing and says nothing. If `uv --version` or `bun --version` answers "command not found", it's almost always because `curl` or `git` was missing. Install them, then try again.
+
+> 🍎 **macOS**: `curl`, `git` and `nano` are already provided by the system — nothing to do (for `wget`: `brew install wget`).
+
 ### uv — The Python dependency manager
 
 Historically, to manage Python dependencies, we used **pip** (Python's package manager — it downloads and installs dependencies) + **venv** (a tool that creates an isolated folder for each project, so that one project's dependencies don't interfere with another's — imagine separate boxes for each recipe). It works, but it's slow and verbose.
@@ -309,8 +328,9 @@ ls
 # ↑ the course repo appeared next to your project
 
 # Copy the project code into your repo
-cp -r devops-from-zero/devops-project/* devops-project/
-cp -r devops-from-zero/devops-project/.gitignore devops-project/
+# The trailing "." on the source = copy EVERYTHING, including hidden files
+# and folders (.github, .gitignore…) — otherwise the Module 4 CI won't work!
+cp -r devops-from-zero/devops-project/. devops-project/
 
 # Delete the course repo (we don't need it anymore)
 rm -rf devops-from-zero
@@ -325,6 +345,8 @@ ls
 # backend  docker-compose.yml  frontend  README.md
 # ↑ everything's there!
 ```
+
+> ⚠️ **Don't forget the hidden files.** `ls` doesn't show anything starting with a dot. Check with `ls -a devops-project`: you should see `.github` and `.gitignore`. It's `.github/` that holds the Module 4 CI workflow — with the old `cp -r …/*` command it was **never copied** and the CI never triggered (with no error message at all).
 
 You should have this structure:
 ```

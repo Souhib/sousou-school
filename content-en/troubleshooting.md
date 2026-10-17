@@ -191,6 +191,44 @@ pwd
 
 ---
 
+### `docker: unknown command: docker compose`
+
+```
+docker: 'compose' is not a docker command.
+```
+
+**What it means:** you installed `docker.io` but **not** the Docker Compose v2 plugin.
+
+**How to fix:**
+```bash
+sudo apt update && sudo apt install -y docker-compose-v2
+docker compose version   # Docker Compose version v2.x.x
+```
+
+> Ubuntu's `docker.io` package does not include `docker compose`. Always install both: `docker.io` **and** `docker-compose-v2` (see [Module 3](03-docker.md)).
+
+---
+
+### `Cannot connect to the Docker daemon`
+
+```
+Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+```
+
+**What it means:** the Docker engine isn't running (or you don't have the rights).
+
+**How to fix:**
+```bash
+# 1. Start the engine
+sudo systemctl enable --now docker
+
+# 2. If you just added your user to the docker group, reconnect
+sudo usermod -aG docker $USER
+# (close and reopen your terminal)
+```
+
+---
+
 ### `no matching manifest for linux/arm64` (Mac M1/M2/M3)
 
 ```
@@ -546,6 +584,23 @@ Error: Cycle: aws_security_group.web, aws_security_group.db
 
 ## Ansible
 
+### `Ansible requires the locale encoding to be UTF-8; Detected None`
+
+```
+ERROR: Ansible requires the locale encoding to be UTF-8; Detected None.
+```
+
+**What it means:** the system has no locale configured (common on a minimal Ubuntu image). Ansible refuses to start.
+
+**How to fix:**
+```bash
+export LANG=C.UTF-8
+# to make it permanent:
+echo 'export LANG=C.UTF-8' >> ~/.bashrc
+```
+
+---
+
 ### `UNREACHABLE` — Unable to connect
 
 ```
@@ -681,6 +736,8 @@ kubectl logs backend-6d4f5b7c9d-abc12 --previous
 # "connection refused" → the DB is not reachable
 # "Permission denied" → permissions issue in the container
 # Silent crash → probably an OOM
+# "host not found in upstream \"backend\"" (nginx) → the K8s Service name
+#   doesn't match the one used in the config (see Module 9)
 
 # Step 2: the events
 kubectl describe pod backend-6d4f5b7c9d-abc12
@@ -707,7 +764,12 @@ kubectl describe pod backend-6d4f5b7c9d-abc12
 # 1. Typo in the image name → check "image:" in the YAML
 # 2. The image doesn't exist on Docker Hub (or the repo is private)
 # 3. On minikube, the image is local → minikube image load <image>
+# 4. ":latest" tag → K8s applies imagePullPolicy: Always and tries to pull
+#    EVEN IF the image is already loaded → add "imagePullPolicy: IfNotPresent"
+#    to the YAML (or use a versioned tag, e.g. :v1)
 ```
+
+> ⚠️ `kubectl rollout restart deployment backend` does **not** fix an `ImagePullBackOff` while `imagePullPolicy` stays `Always`: the pod will retry the pull and fail again. Fix the YAML first ([Module 9](09-kubernetes.md)).
 
 ---
 

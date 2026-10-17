@@ -149,7 +149,8 @@ awslocal iam list-attached-user-policies --user-name intern
 
 ```bash
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-sudo apt install -y unzip
+sudo apt install -y unzip zip
+# unzip = to extract the AWS CLI archive; zip = to package a Lambda's code (further down)
 unzip awscliv2.zip
 sudo ./aws/install
 ```
@@ -427,6 +428,8 @@ awslocal ec2 describe-instances --instance-ids $INSTANCE \
 
 ⚠️ **`running` does NOT mean "ready".** The server is powered on, but it's still installing its SSH server — that takes a good minute. Same behaviour as on real AWS: there's always a gap between the `running` state and the moment SSH answers.
 
+> 💡 On the emulator, the table's `PublicIpAddress` column can be **empty** (`None`) — the instance has no public IP. That's normal: you reach it via `127.0.0.1` and the mapped port, just below.
+
 ```bash
 # Find which port on your machine maps to the server's SSH
 PORT=$(docker ps --filter "name=floci-ec2-$INSTANCE" --format '{{.Ports}}' \
@@ -608,6 +611,9 @@ awslocal rds delete-db-instance --db-instance-identifier my-database --skip-fina
 ```bash
 mkdir -p my-lambda && cd my-lambda
 
+# 0. The "zip" tool isn't installed by default on minimal Ubuntu
+sudo apt install -y zip
+
 # 1. The function code
 cat > lambda_function.py <<'EOF'
 def lambda_handler(event, context):
@@ -709,6 +715,8 @@ You'll find SQS in the [system design exercises](system-design-exercises.md) -- 
 # Create the queue
 awslocal sqs create-queue --queue-name my-queue
 # {"QueueUrl": "http://localhost:4566/000000000000/my-queue"}
+# 💡 Depending on the Floci config, the host may show as "floci" instead of "localhost"
+#    (e.g. http://floci:4566/...) — both work, use the one displayed.
 
 Q=http://localhost:4566/000000000000/my-queue
 
@@ -1037,7 +1045,7 @@ Every previous exercise ran on the emulator. The final deployment can't -- and i
 | What's needed here | Why the emulator can't do it |
 |---|---|
 | **Running containers on the server** | Your emulated "server" is itself a container. You can install Docker in it, but you can't launch containers from it (a nested storage limitation). And the whole project relies on `docker compose up`. |
-| **An address reachable from the internet** | An emulated instance's "public" IP is `127.0.0.1` -- your own machine. Nobody else can open your app. |
+| **An address reachable from the internet** | An emulated instance has no public IP (`PublicIpAddress: None`): you reach it via `127.0.0.1:port` on your own machine. Nobody else can open your app. |
 | **The real experience** | The web console, real latency, real permission errors, billing. None of that exists locally. |
 
 And above all: in an interview you want to be able to say **"I deployed an application on AWS"**, not "on an emulator".

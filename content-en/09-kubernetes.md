@@ -71,10 +71,18 @@ minikube start
 # ✅  Using the docker driver
 # 🏄  Done! kubectl is now configured to use "minikube"
 
+# ⚠️ If you're root (or inside a container), minikube refuses the docker driver.
+# Add --force:
+# minikube start --driver=docker --force
+
 kubectl get nodes
 # NAME       STATUS   ROLES           AGE   VERSION
 # minikube   Ready    control-plane   1m    v1.x.x
 ```
+
+> ⚠️ **`STATUS` = `NotReady` right after startup?** That's normal for ~1 minute: the kubelet and the network (CNI) are still initialising. Run `kubectl get nodes` again a bit later. If it's still `NotReady` after 3-4 minutes, run `minikube delete` then `minikube start` to start from scratch.
+>
+> ⚠️ **`RUNTIME_ENABLE` error or `mount ... fstype: overlay ... invalid argument`?** You're inside a container (nested overlay isn't supported). Use a normal machine/VM.
 
 ## Kubernetes objects
 
@@ -136,7 +144,7 @@ Exposes pods on the network. Even if pods die and get recreated (with new IPs), 
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend-service
+  name: backend            # The Service name = its internal DNS name (e.g. http://backend:8000)
 spec:
   selector:
     app: backend          # Find pods with the label app=backend (from the Deployment above)
@@ -246,13 +254,18 @@ spec:
       containers:
         - name: backend
           image: mon-user/devops-backend:latest
+          imagePullPolicy: IfNotPresent   # ⚠️ ESSENTIAL: with ":latest", K8s
+                                          # ALWAYS tries to pull the image from a
+                                          # registry (Always) and ignores "minikube image load".
           ports:
             - containerPort: 8000
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend-service
+  name: backend        # ⚠️ The Service name IS the internal DNS name.
+                       # The frontend's nginx does "proxy_pass http://backend:8000"
+                       # → the Service must therefore be named exactly "backend".
 spec:
   selector:
     app: backend
@@ -283,6 +296,7 @@ spec:
       containers:
         - name: frontend
           image: mon-user/devops-frontend:latest
+          imagePullPolicy: IfNotPresent   # ⚠️ same reason as for the backend
           ports:
             - containerPort: 80
 ---
@@ -314,6 +328,8 @@ minikube image load mon-user/devops-frontend:latest
 # (the name in the YAML must match the image on Docker Hub)
 ```
 
+> ⚠️ **`minikube image load` is NOT enough with the `:latest` tag.** Kubernetes then applies `imagePullPolicy: Always`: it **still** tries to pull the image from a registry, ignores the locally loaded image and ends up in `ImagePullBackOff`. That's why the YAMLs above contain `imagePullPolicy: IfNotPresent`. The two other solutions: use a versioned tag (`:v1`) instead of `:latest`, or push the image to Docker Hub.
+
 ### 5. Deploy
 
 ```bash
@@ -329,9 +345,12 @@ kubectl get pods
 
 kubectl get services
 # NAME               TYPE       CLUSTER-IP      PORT(S)
-# backend-service    NodePort   10.96.x.x       8000:3xxxx/TCP
+# backend            NodePort   10.96.x.x       8000:3xxxx/TCP
 # frontend-service   NodePort   10.96.x.x       80:3yyyy/TCP
+# ↑ the "backend" Service carries the DNS name nginx uses (proxy_pass http://backend:8000)
 ```
+
+> 💡 **A pod in `CrashLoopBackOff` with `host not found in upstream "backend"`?** The Service isn't called `backend`. The Service name **is** the internal DNS name: `nginx.conf` does `proxy_pass http://backend:8000`, so the Service must be named exactly `backend`.
 
 ### 6. Access the app
 
@@ -340,6 +359,12 @@ minikube service frontend-service --url
 # http://192.168.49.2:3yyyy
 # Open this URL in your browser
 ```
+
+> 🍎 **On macOS (docker driver), `minikube service --url` can hang** (it opens a tunnel). Use a port-forward instead:
+> ```bash
+> kubectl port-forward svc/frontend-service 8080:80
+> # then open http://localhost:8080
+> ```
 
 ### 7. Scale and observe
 
@@ -357,10 +382,18 @@ kubectl get pods
 # Rolling update = progressive update (change the image without downtime)
 # K8s replaces pods one by one: it creates a new pod with v2,
 # waits for it to be ready, then deletes an old v1 pod, and so on.
+
+# ⚠️ You must FIRST build and load the v2 image (otherwise ImagePullBackOff):
+docker build -t mon-user/devops-backend:v2 ~/devops-project/backend
+minikube image load mon-user/devops-backend:v2
+
 kubectl set image deployment/backend backend=mon-user/devops-backend:v2
 kubectl rollout status deployment/backend
 # Waiting for deployment "backend" rollout to finish...
 # deployment "backend" successfully rolled out
+
+# Roll back if needed:
+kubectl rollout undo deployment/backend
 ```
 
 ### 8. Clean up
@@ -409,26 +442,39 @@ With minikube, local Docker images are not automatically available in the cluste
 <details>
 <summary>✅ Solution</summary>
 
-**The problem:** Kubernetes is trying to download (`pull`) the image from Docker Hub, but it doesn't exist on Docker Hub (either the name is wrong, the repo is private, or the image is only local).
+**The problem:** Kubernetes is trying to download (`pull`) the image from Docker Hub, but it doesn't exist on Docker Hub (wrong name, private repo, or image only available locally).
 
-**3 possible solutions:**
+⚠️ **The real trap**: with the `:latest` tag, K8s automatically applies `imagePullPolicy: Always` — it **tries to pull the image anyway**, even if `minikube image load` already loaded it into the node. That's the #1 cause of `ImagePullBackOff` locally.
 
-1. **Load the local image into minikube** (most common in dev):
+**The solutions, from the most complete to the simplest:**
+
+1. **Declare `imagePullPolicy: IfNotPresent`** in the YAML (the course YAML already contains it):
+```yaml
+    spec:
+      containers:
+        - name: backend
+          image: mon-user/devops-backend:latest
+          imagePullPolicy: IfNotPresent   # ← use the locally loaded image
+```
+
+2. **Load the local image into minikube** (essential if it isn't on a registry) — **in addition to** point 1:
 ```bash
 minikube image load mon-user/devops-backend:latest
 ```
 
-2. **Push the image to Docker Hub** (if you want K8s to download it):
-```bash
-docker push mon-user/devops-backend:latest
-```
+3. **Use a versioned tag** (`:v1` instead of `:latest`) — that's the best practice (see above).
 
-3. **Check the image name** in the YAML — a typo in `image:` causes this problem.
+4. **Push the image to Docker Hub** if you want K8s to actually download it.
 
-After the fix, force K8s to retry:
+5. **Check the image name** in the YAML — a typo in `image:` causes the same error.
+
+After fixing the YAML, re-apply and force K8s to retry:
 ```bash
+kubectl apply -f backend.yml
 kubectl rollout restart deployment backend
 ```
+
+> ⚠️ **`kubectl rollout restart` does NOT fix an `ImagePullBackOff`** if `imagePullPolicy` stays `Always`: the pod will retry the pull and fall back into the same state. The YAML is what you need to fix first.
 
 </details>
 
@@ -477,7 +523,7 @@ A: Three types of K8s Services. **ClusterIP** (default) = accessible only from i
 
 ## Common mistakes
 
-- **Image not found** -> Check the image name in the YAML. If it's a local image, use `minikube image load`.
+- **Image not found (`ImagePullBackOff`)** -> Check the image name in the YAML. If it's local, `minikube image load` **and** `imagePullPolicy: IfNotPresent` (otherwise `:latest` forces a pull).
 - **CrashLoopBackOff** -> The container is crash-looping. `kubectl logs POD` to see the error.
 - **Pending** -> Not enough resources on the node. Reduce replicas or resource requests.
 - **Forgetting the selector** -> The Service can't find the pods. Labels in the Deployment must match the Service's selector.

@@ -402,6 +402,13 @@ On GitHub -> your repo -> **Settings** -> **Secrets and variables** -> **Actions
 
 The `ci.yml` file is already in the project. If you've pushed everything, the pipeline runs automatically.
 
+> ⚠️ **Check that it's really there** (remember the hidden-file copy in [Module 0](00-prerequisites.md)):
+> ```bash
+> ls -a ~/devops-project/.github/workflows/
+> # ci.yml
+> ```
+> If it's missing, restore it: `cp -r devops-from-zero/devops-project/.github ~/devops-project/` — without it, the **Actions** tab stays empty and nothing will trigger.
+
 ```bash
 cd ~/devops-project
 git add .

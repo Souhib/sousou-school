@@ -21,13 +21,17 @@ These tools are used to test networking. Install them now:
 
 ```bash
 # Linux / WSL (Ubuntu)
-sudo apt install -y dnsutils net-tools curl wget
+sudo apt install -y dnsutils net-tools curl wget iproute2 iputils-ping traceroute ufw
 # dnsutils = contains "dig", to query DNS servers
-# net-tools = classic networking commands
+# net-tools = classic networking commands (netstat…)
 # curl = send HTTP requests from the terminal
 # wget = download files from a URL
+# iproute2 = contains "ip" and "ss" (used below) — not installed by default on a minimal Ubuntu
+# iputils-ping = contains "ping"
+# traceroute = contains "traceroute"
+# ufw = Ubuntu's simple firewall
 
-# macOS: dig, netstat and curl are already installed — only wget is missing
+# macOS: dig, netstat, ping and curl are already installed — only wget is missing
 brew install wget
 ```
 
@@ -42,9 +46,14 @@ An IP address identifies a machine on the network. There are two types:
 
 ```bash
 # See your private IP
+# Linux / WSL:
 ip addr show
 # or
 hostname -I
+# macOS (ss, ip and hostname -I don't exist there):
+ifconfig | grep "inet "
+# or
+ipconfig getifaddr en0
 # 192.168.1.15
 
 # See your public IP
@@ -70,11 +79,15 @@ A port = a number between 1 and 65535 that identifies a service on a machine. An
 
 ```bash
 # See the open ports on your machine
+# Linux / WSL:
 ss -tlnp
 # -t = TCP only, -l = listening ports, -n = show numbers, -p = show process
 # State   Recv-Q  Send-Q   Local Address:Port   ...
 # LISTEN  0       128      0.0.0.0:22            ...  sshd
 # LISTEN  0       128      0.0.0.0:8000          ...  uvicorn
+
+# macOS (the command is called lsof):
+lsof -iTCP -sTCP:LISTEN -n -P
 ```
 
 ## Port Mapping (crucial for Docker)
@@ -257,8 +270,9 @@ ping google.com
 # See the network path to a machine
 traceroute google.com
 
-# See connections and open ports
+# See connections and open ports (Linux/WSL)
 ss -tlnp
+# macOS: lsof -iTCP -sTCP:LISTEN -n -P
 
 # Resolve a DNS name
 dig +short example.com
@@ -300,7 +314,10 @@ Launch the Hands-on Project backend, then:
 cd ~/devops-project/backend
 uv run uvicorn main:app --reload &
 
+# Linux / WSL:
 ss -tlnp | grep 8000
+# macOS:
+lsof -iTCP:8000 -sTCP:LISTEN -n -P
 # LISTEN  0  128  0.0.0.0:8000  ...  uvicorn
 
 curl http://localhost:8000/api/health
