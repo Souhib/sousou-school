@@ -57,9 +57,9 @@ The code is in [`devops-project/`](devops-project/).
 We evolve it with each module:
 - **[Module 0](00-prerequisites.md) and [Module 1](01-linux-basics.md):** We clone it, we run it locally
 - **[Module 3](03-docker.md):** We dockerize it
-- **[Module 4](04-cicd.md):** We add a CI/CD pipeline
+- **[Module 4](04-cicd.md):** We add a CI/CD pipeline (lint, tests, build, image push)
 - **[Module 5](05-aws.md):** We practise every AWS service locally, then deploy it on real AWS
-- **[Module 6](06-terraform.md):** We automate the infra with Terraform
+- **[Module 6](06-terraform.md):** We automate the infra with Terraform, and wire the pipeline to it — a `git push` updates the app on its own
 - **[Module 7](07-ansible.md):** We configure the server with Ansible
 - **[Module 8](08-monitoring.md):** We monitor it with Prometheus + Grafana
 - **[Module 9](09-kubernetes.md):** We orchestrate it with Kubernetes

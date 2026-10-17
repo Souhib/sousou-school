@@ -2,7 +2,7 @@
 
 > **Prerequisites:** [Module 5](05-aws.md) (AWS -- understand EC2, VPC, Security Groups before automating them)
 
-> **In a nutshell:** You replace manual clicks in the AWS console with code. Terraform lets you describe your infrastructure in files, versioned in Git, reproducible and shareable. What took you 30 min by hand, Terraform does in 2 min.
+> **In a nutshell:** You replace manual clicks in the AWS console with code. Terraform lets you describe your infrastructure in files, versioned in Git, reproducible and shareable. What took you 30 min by hand, Terraform does in 2 min. And at the end of the module you wire your [Module 4](04-cicd.md) pipeline to the server: a `git push` updates the app on its own.
 
 ## What is Terraform and why does it exist?
 
@@ -708,6 +708,106 @@ terraform apply
 
 **One codebase, two environments.** That's the concrete outcome of this whole module.
 
+### 9. Deploy automatically (CD)
+
+Your server is running. But look at what happens when you change the code:
+
+1. you push to GitHub -> the [Module 4](04-cicd.md) pipeline checks the code, builds the images and pushes them to Docker Hub;
+2. and... **nothing**. Your server keeps running the old version.
+
+To update it, you reconnect over SSH (`ssh -i ~/devops-key.pem ubuntu@...`), run `git pull`, then `docker compose up -d --build`. By hand. Every time.
+
+The `user_data` you wrote above only runs **on the instance's first boot** -- it doesn't re-run anything when you push new code.
+
+Now you have everything you need to close the loop: a server (this module) and a pipeline ([Module 4](04-cicd.md)). All that's missing is one job: `deploy`.
+
+> 💡 **Why didn't we do this in Module 4?** Because at that point you didn't have a server yet. And Floci's EC2 can't be the target: Floci does start a real Ubuntu container, but **you can't run Docker inside it** (nested storage limitation), and it has **no public IP** -- so a GitHub runner, which runs in the cloud, can't reach it. Automatic deployment is tested against a real server (Option B above). See [Floci / AWS locally](floci-aws-local.md).
+
+#### The job to add
+
+Open `~/devops-project/.github/workflows/ci.yml` and add this job **at the end of the file**:
+
+```yaml
+  # --- Stage 5: Deploy to the server ---
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: push                       # We only deploy if the image was actually pushed (so if everything is green)
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.DEPLOY_ENABLED == 'true'
+    environment: production           # Can require a manual approval (see below)
+    steps:
+      - name: Deploy over SSH to the server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e                    # Stop the script at the first error
+            cd ~/devops-project
+            git pull
+            docker compose up -d --build
+
+      - name: Check that the app responds
+        run: curl -fsS "http://${{ secrets.EC2_HOST }}/api/health"
+```
+
+Let's break it down:
+
+| Line | Role |
+|------|------|
+| `needs: push` | We only deploy **if** the delivery succeeded. We don't deploy a version whose tests failed |
+| `if: ... vars.DEPLOY_ENABLED == 'true'` | A **switch**: until you create the variable, the job is *skipped* and your pipeline stays green |
+| `environment: production` | Attaches the job to a protected environment -> you can require a **manual approval** before it starts |
+| `appleboy/ssh-action@v1` | An action that opens an SSH connection to your server and runs the script there |
+| `set -e` | Without it, a failed `git pull` wouldn't stop the rest: the job would show "green" while nothing was updated |
+| `git pull` + `docker compose up -d --build` | Pulls the new code and restarts the app |
+| `curl ... /api/health` | Checks that the app responds **after** the deployment -- otherwise the job fails and you know right away |
+
+The job assumes the repository is **already cloned** on the server in `~/devops-project` -- that's what your `user_data` did on first boot.
+
+#### The secrets and the variable
+
+In your GitHub repo's **Settings** -> **Secrets and variables** -> **Actions**:
+
+| Type | Name | Value |
+|------|------|-------|
+| Secret | `EC2_HOST` | Your server's public IP -- the `public_ip` output of `terraform output` |
+| Secret | `EC2_SSH_KEY` | The **full contents** of your private key: `cat ~/devops-key.pem` (including the `-----BEGIN`/`-----END` lines) |
+| Variable | `DEPLOY_ENABLED` | `true` |
+
+> ⚠️ Don't mix up the tabs: `DEPLOY_ENABLED` is a **variable** (the *Variables* tab), not a secret. It's what flips the switch in the `if:`.
+
+#### Test it
+
+```bash
+cd ~/devops-project
+# Change the <h1> in frontend/src/App.jsx for example
+git add .
+git commit -m "feat: new title"
+git push
+```
+
+Go to the **Actions** tab: `Lint -> Test -> ... -> Push -> Deploy`. When it's green, reload `http://$YOUR_IP`: **your change is live**, and you never went through SSH. 🎉
+
+#### Protect production
+
+By default, `deploy` runs on its own as soon as the pipeline is green. On a team, you often want a human to validate before touching production. That's what `environment` is for:
+
+**Settings** -> **Environments** -> **New environment** -> `production` -> check **Required reviewers** and add yourself. Now the `deploy` job **waits for your click**. That's exactly the *Delivery* (manual button) / *Deployment* (automatic) difference from [Module 4](04-cicd.md).
+
+#### What if the deployment breaks production?
+
+```bash
+# Revert the faulty commit and push again -> the pipeline redeploys the previous version
+git revert <commit_sha>
+git push
+```
+
+That's why we keep a clean Git history: **rolling back is just going back to a commit.**
+
+> 💡 **Going further: deploy the exact image built by CI.** Here, the server **rebuilds** the image (`--build`): it deploys your *code*, not the image the CI tested. The holy grail of CD is *"build once, run the same artifact"*: add `image: <your_dockerhub_user>/devops-backend:latest` to the services in `docker-compose.yml`, then on the server run `docker compose pull && docker compose up -d --no-build`. The server then runs **exactly** the image the CI validated. We keep the `--build` version here, as it's simpler to understand when you're starting out.
+
 ## Interview Corner
 
 **Q: What is Terraform?**
@@ -769,4 +869,6 @@ A: A plugin that connects Terraform to a service (AWS, GCP, Azure, GitHub...). T
 - [ ] You've put your state on an S3 backend and verified there's no local file left
 - [ ] You know how to point the AWS provider at a local endpoint, and why the `skip_*` flags are needed
 - [ ] You've recreated the [Module 5](05-aws.md) infrastructure in Terraform
+- [ ] You've wired the [Module 4](04-cicd.md) pipeline to your server: a `git push` updates the app on its own
+- [ ] You know why this automatic deployment can't be tested on Floci's EC2
 - [ ] You've run `terraform destroy` on real AWS to avoid costs

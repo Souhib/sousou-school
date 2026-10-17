@@ -302,7 +302,7 @@ This is the most important section on this page. An emulator isn't magic, and kn
 | **No web console** | AWS has a website with buttons; Floci only has an API. | You only practise on the command line. That's a real gap: interviewers sometimes ask you to describe the console. |
 | **No billing, no quotas** | Nothing is metered or limited. | You don't learn to think in terms of cost — and that's a genuine DevOps skill. |
 | **No access from the internet** | Your "EC2" isn't reachable from the outside. `describe-instances` doesn't return a public IP at all (`PublicIpAddress: None`) — you access it via `127.0.0.1` and the Docker-mapped port (see Module 5: `ssh -p 2200 root@127.0.0.1`). | You can't show your app to somebody else. |
-| **Docker doesn't run *inside* an emulated EC2 instance** | The emulated instance is already a container. Installing Docker in it works, but **running** a container fails (a nested storage limitation). | ⚠️ **The project's final deployment (`docker compose up` on the server) must be done on real AWS.** |
+| **Docker doesn't run *inside* an emulated EC2 instance** | The emulated instance is already a container. Installing Docker in it works, but **running** a container fails (a nested storage limitation). | ⚠️ **The project's final deployment (`docker compose up` on the server) must be done on real AWS.** That's also why automatic deployment ([Module 6](06-terraform.md), step 9) can only be tested there. |
 | **Coverage varies by service** | Floci is a young project (first public release March 2026). The main services are solid, the more exotic ones less so. | If a rare command fails, it isn't necessarily your fault. Check [the project repository](https://github.com/floci-io/floci). |
 
 ### The rule to remember
