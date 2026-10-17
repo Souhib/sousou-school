@@ -20,6 +20,7 @@
 ## Installation
 
 ```bash
+# Linux / WSL (Ubuntu)
 sudo apt update
 sudo apt install -y docker.io
 sudo usermod -aG docker $USER
@@ -33,6 +34,8 @@ sudo usermod -aG docker $USER
 docker --version
 # Docker version 24.x.x
 ```
+
+> 🍎 **On macOS**, Docker is not installed with `apt`: download **Docker Desktop** from [docker.com](https://docs.docker.com/desktop/install/mac-install/) and launch it once. `docker` and `docker compose` then become available in your terminal — and there is **no** `usermod` step.
 
 Verify it works:
 ```bash

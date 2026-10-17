@@ -32,7 +32,8 @@
 | `cat <file>` | Read a file | **daily** |
 | `mkdir -p <path>` | Create directories recursively | **daily** |
 | `grep -r "<text>" <directory>/` | Search for text | **daily** |
-| `sudo apt update && sudo apt install -y <package>` | Install a package (e.g. `curl`, `git`) | **daily** |
+| `sudo apt update && sudo apt install -y <package>` | Install a package — Linux/WSL (e.g. `curl`, `git`) | **daily** |
+| `brew install <package>` | Install a package — **macOS** | **daily** |
 | `pwd` | Show current directory | occasional |
 | `nano <file>` | Edit a file in the terminal | occasional |
 | `rm -r <directory>` | Delete (recursive) | occasional |
@@ -163,7 +164,7 @@ jobs:
 
 ## AWS locally (Floci)
 
-See the [full guide](floci-aws-local.md). The shortcut to put in `~/.bashrc`:
+See the [full guide](floci-aws-local.md). The shortcut to put in your shell's config file — `~/.zshrc` on macOS, `~/.bashrc` on Linux/WSL:
 
 ```bash
 export AWS_ACCESS_KEY_ID=test

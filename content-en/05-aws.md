@@ -145,17 +145,33 @@ awslocal iam list-attached-user-policies --user-name intern
 
 ## AWS CLI
 
+**Linux / WSL (Ubuntu):**
+
 ```bash
-# Installation
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 sudo apt install -y unzip
 unzip awscliv2.zip
 sudo ./aws/install
+```
 
+**macOS:**
+
+```bash
+brew install awscli
+```
+
+> On macOS, `unzip` ships with the system and Homebrew installs the right build (Intel or Apple Silicon) — nothing else to do. No Homebrew? Install it first: [brew.sh](https://brew.sh).
+
+Check in both cases:
+
+```bash
 aws --version
 # aws-cli/2.x.x
+```
 
-# Configuration
+**Configuration** — only needed for **real** AWS (Track B). Locally with Floci you don't need it: the [AWS locally guide](floci-aws-local.md) is happy with fake credentials.
+
+```bash
 aws configure
 # AWS Access Key ID: your_key
 # AWS Secret Access Key: your_secret
@@ -547,7 +563,8 @@ awslocal rds describe-db-instances --db-instance-identifier my-database \
 **The endpoint** is the database's address. On real AWS it looks like `my-database.c9x.eu-west-3.rds.amazonaws.com`, and it's what you put in your `DATABASE_URL`.
 
 ```bash
-# Connect (install psql if needed: sudo apt install -y postgresql-client)
+# Connect (psql missing? Linux: sudo apt install -y postgresql-client
+#                          macOS: brew install postgresql)
 psql -h localhost -p 7001 -U postgres
 # Password: MyPassword123
 
@@ -707,9 +724,18 @@ Look closely at the response: there's a **`ReceiptHandle`** field. It's the most
 **Receiving a message does not delete it.** It only becomes *invisible* to other consumers for a while (the *visibility timeout*, 30 seconds by default). You must delete it **explicitly** once the work is done:
 
 ```bash
+# ⚠️ The message received just above is still "invisible" for 30 seconds:
+# send a fresh one before demonstrating deletion.
+awslocal sqs send-message --queue-url $Q --message-body "Send invoice 1043"
+
+# Receive a message AND keep its "receipt handle" in a variable
 RECEIPT=$(awslocal sqs receive-message --queue-url $Q --query 'Messages[0].ReceiptHandle' --output text)
+
+# Work is done → delete the message explicitly, using its receipt
 awslocal sqs delete-message --queue-url $Q --receipt-handle "$RECEIPT"
 ```
+
+> **The receipt is only valid for the message you just received.** If you chain two `receive-message` calls without waiting, the second returns nothing (the message is still invisible) and `delete-message` fails with `ReceiptHandleIsInvalid`. In real code you always receive and delete the **same** message, keeping its receipt in a variable — exactly as above.
 
 **Why this odd behaviour?** Because it makes the system crash-resistant. If your program dies **during** processing, it never deletes the message: after 30 seconds it becomes visible again, and another program picks it up. **No work is ever lost.**
 

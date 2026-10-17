@@ -125,7 +125,26 @@ We'll create a **command shortcut** (an "alias") called `awslocal` that adds Flo
 - you can **see** in the command that you're local (`awslocal` ≠ `aws`);
 - it's impossible to send a command to real AWS by mistake.
 
-Add these lines to the end of your `~/.bashrc`:
+#### ⚠️ First: find the right configuration file
+
+These lines must go into a file that is read automatically every time you open a terminal. **That file depends on your shell**, and that's where everyone gets it wrong:
+
+| Your system | Default shell | File to edit |
+|---|---|---|
+| **macOS** | `zsh` | `~/.zshrc` |
+| **Linux / WSL (Ubuntu)** | `bash` | `~/.bashrc` |
+
+To find yours:
+
+```bash
+echo $SHELL
+# /bin/zsh   → macOS     → edit ~/.zshrc
+# /bin/bash  → Linux/WSL → edit ~/.bashrc
+```
+
+> 🍎 **The macOS trap.** Since macOS Catalina, a Mac's default shell has been **`zsh`**, and `zsh` **does not read** `~/.bashrc`. If you put your alias there, it will only work in the terminal where you ran `source`, then vanish in the next one. Most AWS tutorials are written for Linux and walk you straight into this trap.
+
+Open the file that matches your shell (`nano ~/.zshrc` on macOS, `nano ~/.bashrc` on Linux/WSL) and add these lines at the end:
 
 ```bash
 # ─── Local AWS (Floci) ───
@@ -135,13 +154,34 @@ export AWS_DEFAULT_REGION=us-east-1
 alias awslocal='aws --endpoint-url=http://localhost:4566'
 ```
 
-Then reload the file:
+**Shortcut** — this command picks the right file on its own and appends the lines for you:
 
 ```bash
-source ~/.bashrc
+RC=~/.bashrc; [ -n "$ZSH_VERSION" ] && RC=~/.zshrc
+cat >> "$RC" <<'EOF'
+# ─── Local AWS (Floci) ───
+export AWS_ACCESS_KEY_ID=test
+export AWS_SECRET_ACCESS_KEY=test
+export AWS_DEFAULT_REGION=us-east-1
+alias awslocal='aws --endpoint-url=http://localhost:4566'
+EOF
 ```
 
-> **What is `~/.bashrc`?** A configuration file read automatically every time you open a terminal. Anything you put in it applies to every new session. `source` applies it right now, without reopening the terminal. (See environment variables in [Module 1](01-linux-basics.md).)
+Then reload the file to apply it right away:
+
+```bash
+source ~/.zshrc    # macOS
+source ~/.bashrc   # Linux / WSL
+```
+
+Check that it worked:
+
+```bash
+alias awslocal
+# awslocal='aws --endpoint-url=http://localhost:4566'
+```
+
+> **What is this config file?** A file read automatically every time you open a terminal: anything in it applies to every new session. `source` applies it right now, without reopening the terminal. (See environment variables in [Module 1](01-linux-basics.md).)
 
 ### Why fake credentials?
 
@@ -287,7 +327,7 @@ docker compose logs floci  # to see what's wrong
 **Your command went to REAL AWS.** This is the endpoint trap described above.
 
 - Did you type `aws` instead of `awslocal`?
-- Is the alias loaded? Check with `alias awslocal` — it should print the definition. If not, run `source ~/.bashrc`.
+- Is the alias loaded? Check with `alias awslocal` — it should print the definition. If not, reload your shell config (`source ~/.zshrc` on macOS, `source ~/.bashrc` on Linux/WSL — see [the guide](#the-fix-an-alias)).
 
 ### `Unable to locate credentials`
 
@@ -295,7 +335,8 @@ The `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` variables aren't set.
 
 ```bash
 echo $AWS_ACCESS_KEY_ID   # should print "test"
-source ~/.bashrc          # if it's empty
+source ~/.zshrc           # macOS — if it's empty
+source ~/.bashrc          # Linux / WSL
 ```
 
 ### `Bind for 0.0.0.0:4566 failed: port is already allocated`
@@ -313,7 +354,7 @@ docker compose down             # shut it down cleanly
 Floci can't reach Docker. Check the logs:
 
 ```bash
-docker compose logs floci | grep -i "BindException\|Failed to launch"
+docker compose logs floci | grep -iE "BindException|Failed to launch"
 ```
 
 If you see `java.net.BindException: Permission denied`, the `dockerproxy` service from `docker-compose.yml` didn't start. Check:
@@ -343,6 +384,8 @@ awslocal rds describe-db-instances \
 
 psql -h localhost -p 7001 -U postgres
 #       ^^^^^^^^^ always localhost from your machine
+# (psql not installed? Linux: sudo apt install -y postgresql-client
+#                             macOS: brew install postgresql)
 ```
 
 ---

@@ -53,6 +53,8 @@ wsl --list --verbose
 
 > **You don't need to learn Python or Bun for this course.** We install them because the Hands-on Project needs them: **Python** (a programming language) for the backend, **Bun** (a tool to run JavaScript) for the frontend, and **uv** (a tool to manage Python dependencies). You'll just copy-paste commands to install and run the app. The goal of this course is DevOps, not development. Each tool is explained in detail right below.
 
+> 🍎 **On macOS?** This course uses `apt`, Ubuntu's package installer — it doesn't exist on macOS. The rule is simple: **wherever you see `sudo apt install -y X`, use `brew install X` instead.** Install [Homebrew](https://brew.sh) once to get started. A few exceptions: **Python** → `brew install python`, **Docker** → [Docker Desktop](https://docs.docker.com/desktop/install/mac-install/) (not via the command line), and **unzip** → already shipped with macOS. Everything else (uv, Bun, git, Terraform, Ansible) installs with `brew` or with the commands already given.
+
 Before we begin, here are some terms you'll see everywhere:
 
 | Term | Simple explanation |
@@ -71,7 +73,12 @@ Before we begin, here are some terms you'll see everywhere:
 Python is a very popular programming language. Our backend (FastAPI API) is written in Python. You just need to install it:
 
 ```bash
+# Linux / WSL (Ubuntu)
 sudo apt update && sudo apt install -y python3
+
+# macOS
+brew install python
+
 python3 --version
 # Python 3.x.x
 ```
@@ -151,8 +158,9 @@ To run JavaScript, we historically need **Node.js** (a program that lets you run
 In a nutshell: Bun = Node.js + npm, but faster and simpler. That's why we use it here.
 
 ```bash
-# Bun needs "unzip" to install — let's install that first
+# Bun needs "unzip" — on Linux/WSL:
 sudo apt install -y unzip
+# On macOS, "unzip" is already shipped with the system: nothing to install.
 
 curl -fsSL https://bun.sh/install | bash
 # Same idea as for uv: download and run the installation script

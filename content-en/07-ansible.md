@@ -21,7 +21,11 @@
 ## Installation
 
 ```bash
+# Linux / WSL (Ubuntu)
 sudo apt update && sudo apt install -y ansible
+
+# macOS
+brew install ansible
 
 ansible --version
 # ansible [core 2.x.x]

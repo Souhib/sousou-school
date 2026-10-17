@@ -20,11 +20,15 @@
 These tools are used to test networking. Install them now:
 
 ```bash
+# Linux / WSL (Ubuntu)
 sudo apt install -y dnsutils net-tools curl wget
 # dnsutils = contains "dig", to query DNS servers
 # net-tools = classic networking commands
 # curl = send HTTP requests from the terminal
 # wget = download files from a URL
+
+# macOS: dig, netstat and curl are already installed — only wget is missing
+brew install wget
 ```
 
 ## IP Addresses
